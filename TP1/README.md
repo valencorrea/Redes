@@ -6,7 +6,7 @@
 | Pablo Salvador Dimartino          | 101231 | pdimartino@fi.uba.ar | [GitHub](https://github.com/psdimartino) |
 | Valentina Laura Correa            | 104415 | vcorrea@fi.uba.ar    | [GitHub](https://github.com/valencorrea)   |
 | Agustin Ariel Andrade             | XXXXXX | aandrade@fi.uba.ar   | [GitHub](https://github.com/AgussAndrade) | 
-| Stephanie Ingrid Izquierdo Osorio | XXXXXX | sizquierdo@fi.uba.ar | [GitHub](https://github.com/stephanieizquierdo) | 
+| Stephanie Ingrid Izquierdo Osorio | 104196 | sizquierdo@fi.uba.ar | [GitHub](https://github.com/stephanieizquierdo) | 
 | Juan Sebastian Burgos             | XXXXXX | jsburgos@fi.uba.ar   | [GitHub](https://github.com/juansburgos) | 
 
 ### Introducción
