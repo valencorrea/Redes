@@ -1,12 +1,13 @@
 import os
+import sys
 from socket import *
 
 serverName = '127.0.0.1'
 serverPort = 12001
-path = 'test.txt'
+path = 'correa-tp-greedy.txt'
 
 # CONSTANTES
-CHUNK_SIZE = 64
+CHUNK_SIZE = 128
 TIMEOUT = 5 # RANDOM, PERO PONER ALGUNA JUSTIFICACION EN EL INFORME
 
 class header:
@@ -28,15 +29,17 @@ with open('lib/client-files/' + path, "rb") as f:
         s.sendto(fileMetadata, (serverName, serverPort))
 
         id = 0
-        responseTime = 0
-        ack = 1
+        ack = 0
 
-        while (chunk := f.read(CHUNK_SIZE)) and (ack == 1):
-            chunkMetadata = id.to_bytes(8, byteorder='big') + ack.to_bytes(8, byteorder='big')
+        while chunk := f.read(CHUNK_SIZE-16):
+            chunkMetadata = id.to_bytes(2, byteorder='big') + ack.to_bytes(8, byteorder='big')
             data = chunkMetadata + chunk
             s.sendto(data, (serverName, serverPort))
 
-            if ack == 1:
+            content, clientAddress = s.recvfrom(CHUNK_SIZE)
+            id, ack, chunk = int.from_bytes(content[:2], byteorder='big'), int.from_bytes(content[2:10], byteorder='big'), content[16:]
+
+            if ack == id:
                 id = id + 1
 
 f.close()
