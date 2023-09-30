@@ -30,7 +30,7 @@ def upload(path, host, port, name):
         with socket(AF_INET, SOCK_DGRAM) as s:
             print("Socket created")
 #            s.settimeout(TIMEOUT)
-            package_id = 0
+            package_id = 1
 
             # PRIMER PAQUETE DE PETICION
             # [ ID (Paquete 0) ] 1 byte
@@ -43,40 +43,33 @@ def upload(path, host, port, name):
             fileSize = os.stat(path).st_size
             handshake = header + fileSize.to_bytes(LENGTH_BYTES, byteorder='big') + name.ljust(CHUNK_SIZE - HEADER_SIZE - LENGTH_BYTES,
                                                                               '\0').encode('utf-8')
-            print(len(handshake))
 
-            print("To send file:", name, ' of size:', fileSize)
             s.sendto(handshake, (host, port))
-            print("Sent file:", name, ' of size:', fileSize)
-            # ACCEPT/REJECT
-            package, serverAddress = s.recvfrom(HEADER_SIZE + STATUS_CODE_SIZE + 2)  # serverAddress: ('123.0.8.0', 55555)
+
+            package, serverAddress = s.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
             ack = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
             status_code = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + STATUS_CODE_SIZE], byteorder='big')
             newPort = int.from_bytes(package[HEADER_SIZE + STATUS_CODE_SIZE: HEADER_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
+            print(newPort)
 
-            if status_code is not STATUS_OK:
-                #error especifico tal vez?
+            if status_code != STATUS_OK:
                 print("El servidor respondió con error", status_code)
                 exit(1)
             else:
                 print("Status OK")
-            package_id += 1
-
-            # ENVIO PAQUETES DE DATOS
-            # [ ID (numero del paquete)    ] 1 byte
-            # [           DATA             ] 255 bytes
 
             serverAddress = (host, newPort)
             while data := f.read(CHUNK_SIZE - HEADER_SIZE):
-                header_b = package_id.to_bytes(HEADER_SIZE)
+                header_b = package_id.to_bytes(HEADER_SIZE, byteorder='big')
                 chunk = header_b + data
                 s.sendto(chunk, serverAddress)
 
-                package, serverAddress = s.recvfrom(HEADER_SIZE)
-                ack = int.from_bytes(package)
-                print(ack)
-                if ack == package_id:
-                    package_id += 1
+                # Esperar la confirmación del servidor para este paquete
+                package, _ = s.recvfrom(HEADER_SIZE)
+                ack = int.from_bytes(package, byteorder='big')
+                print(f'Confirmation received for packet {ack}')
+
+                package_id += 1  # Incrementar el número de secuencia del paquete
         s.close()
 
     f.close()

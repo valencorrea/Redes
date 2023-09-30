@@ -43,13 +43,12 @@ def upload():
 #            print("File too big")
 #        else:
         # puerto server, puerto cliente, puerto server donde se hace la transferencia
-        port = 54000
         # levanto hilo con port
-        res = package_id.to_bytes(HEADER_SIZE, byteorder='big') + STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big') + port.to_bytes(2, byteorder='big')
+        res = package_id.to_bytes(HEADER_SIZE, byteorder='big') + STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big')
 #            print("Status OK")
 
         print("About to send response")
-        thread = threading.Thread(target=handleChunks, args=(res, clientAddress, fileName, fileSize, port))
+        thread = threading.Thread(target=handleChunks, args=(res, clientAddress, fileName, fileSize))
         thread.start()
         thread.join()
 
@@ -58,25 +57,27 @@ def upload():
 
 
 
-def handleChunks(res, clientAddress, fileName, fileSize, port):
+def handleChunks(res, clientAddress, fileName, fileSize):
     with socket(AF_INET, SOCK_DGRAM) as transferSocket:
-        transferSocket.bind(('', port))
+        transferSocket.bind(('localhost', 0))
+        client_port = transferSocket.getsockname()[1]
+        print(client_port)
+        # Enviar el nuevo puerto al cliente para que este lo utilice
+        paddingSize = CHUNK_SIZE - len(res) - 2
+        transferSocket.sendto(res + client_port.to_bytes(2, byteorder='big') + b'\x00' * paddingSize, clientAddress)
 
         transferSocket.sendto(res, clientAddress)
         print("response sent")
 
         received = 0
         oldId = 0
-
         with open('lib/server-files/' + fileName, "wb") as f:
             while received < fileSize:
-                if fileSize - received < CHUNK_SIZE - HEADER_SIZE:
-                    package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
-                else:
-                    package, clientAddress = transferSocket.recvfrom(fileSize - received + HEADER_SIZE)
+                package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
+                print(package)
                 package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
                 data = package[HEADER_SIZE:]
-
+                print(f'{oldId} != {package_id}')
                 if (oldId + 1) == package_id:  # Recibi paquete siguiente
                     received += len(data)
                     f.write(data)
