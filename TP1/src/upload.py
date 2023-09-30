@@ -12,7 +12,7 @@ def main():
 
 
 def upload(path, host, port, name):
-    with open(path, "rb") as f:
+    with open(path, "rb") as file:
         with socket(AF_INET, SOCK_DGRAM) as chunkSocket:
             package_id = 0
             header = clientHandshake(package_id, name, path)
@@ -23,11 +23,10 @@ def upload(path, host, port, name):
 
             serverAddress = (host, newPort)
 
-            while data := f.read(CHUNK_SIZE - HEADER_SIZE):
-                handleChunk(data, package_id, serverAddress, chunkSocket)
+            handleChunk(ack, package_id, serverAddress, chunkSocket, file)
         chunkSocket.close()
 
-    f.close()
+    file.close()
 
 
 

@@ -1,6 +1,10 @@
 import argparse
+import time
+
 from constants import *
 import os
+import socket
+
 
 
 def parseArguments():
@@ -55,14 +59,32 @@ def handleHandshake(package):
     return ack, handshakeStatusCode, newPort
 
 
-def handleChunk(data, packageId, serverAddress, chunkSocket):
-    header_b = packageId.to_bytes(HEADER_SIZE, byteorder='big')
-    chunk = header_b + data
-    chunkSocket.sendto(chunk, serverAddress)
+def handleChunk(ack, packageId, serverAddress, chunkSocket, file):
+    chunkSocket.settimeout(5)
+    timeouts = 0
+    while True:
+        time.sleep(5)
+        print(f'ack: {ack} package_id:  {packageId}')
+        try:
+            if ack == packageId:
+                packageId += 1  # Incrementar el número de secuencia del paquete
+                data = file.read(CHUNK_SIZE - HEADER_SIZE)
+                if not data:
+                    break
+                print("Data readed:", len(data))
+            headerb = packageId.to_bytes(HEADER_SIZE, byteorder='big')
+            chunk = headerb + data
+            chunkSocket.sendto(chunk, serverAddress)
+            print("Sended:", len(data))
 
-    # Esperar la confirmación del servidor para este paquete
-    package, _ = chunkSocket.recvfrom(HEADER_SIZE)
-    ack = int.from_bytes(package, byteorder='big')
-    print(f'Confirmation received for packet {ack}')
-
-    packageId += 1  # Incrementar el número de secuencia del paquete
+            # Esperar la confirmación del servidor para este paquete
+            package, _ = chunkSocket.recvfrom(HEADER_SIZE)
+            ack = int.from_bytes(package, byteorder='big')
+            print(f'Confirmation received for pacakge {ack}')
+            timeouts = 0
+        except socket.timeout:
+            print("hubo timeout")
+            timeouts += 1
+            if timeouts == MAX_TIMEOUTS:
+                print("Too many timeouts, connection abort")
+                break
