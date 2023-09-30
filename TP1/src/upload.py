@@ -15,14 +15,14 @@ def main():
     #parser.add_argument('-H', '--host', help="Server IP address", required=True)
     #parser.add_argument('-p', '--port', help="Server port", type=int, required=True)
     #parser.add_argument('-s', '--src', help="Source file path", required=True)
-    #parser.add_argument('-n', '--name', help="File name", required=True)
+    parser.add_argument('-n', '--name', help="File name", required=True)
     #group = parser.add_mutually_exclusive_group()
     #group.add_argument('-v', '--verbose', help="Increase output verbosity", action="store_true")
     #group.add_argument('-q', '--quiet', help="Decrease output verbosity", action="store_true")
 
-    #args = parser.parse_args()
+    args = parser.parse_args()
     #upload(args.src, args.host, args.port, args.name)
-    upload("lib/client-files/" + fileName, serverName, serverPort, fileName)
+    upload("lib/client-files/" + fileName, serverName, serverPort, args.name)
 
 
 def upload(path, host, port, name):
