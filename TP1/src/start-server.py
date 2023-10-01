@@ -20,12 +20,13 @@ def main():
 
             if clientMethod == UPLOAD:
                 fileSize, fileName = getUploadClientFileMetadata(package)
+                print("Uploading " + fileName + " ...")
                 callClientMethod(res, fileSize, clientAddress, "lib/server-files/" + fileName)
-#            elif clientMethod == DOWNLOAD:
-#                fileName = getDownloadClientFileMetadata(package)
-#                fileSize = os.stat("lib/server-files/" + fileName).st_size #CHEKEAR QUE LO TENGO POSTA
-#                print(fileSize)
-#                callClientMethod(res, fileSize, clientAddress, "lib/client-files/" + fileName)
+            elif clientMethod == DOWNLOAD:
+                fileName = getDownloadClientFileMetadata(package)
+                print("Downloading " + fileName + " ...")
+                fileSize = os.stat("lib/server-files/" + str(fileName)).st_size #CHEKEAR QUE LO TENGO POSTA
+                callClientMethod(res, fileSize, clientAddress, "lib/client-files/" + str(fileName))
     s.close()
 
 

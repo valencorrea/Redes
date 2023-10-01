@@ -25,7 +25,7 @@ def download(path, host, port, name):
             chunkSocket.sendto(header, (host, port))
             package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
 
-            ack, handshakeStatusCode, newPort = handleHandshake(package, DOWNLOAD)
+            ack, handshakeStatusCode, newPort = handleHandshake(package)
 
             serverAddress = (host, newPort)
             handleChunk(ack, package_id, serverAddress, chunkSocket, file)

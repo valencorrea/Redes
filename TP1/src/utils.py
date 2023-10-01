@@ -23,7 +23,8 @@ def parseArguments():
 
 def getClientHeader(package):
     packageId = int.from_bytes(package[:PACKAGE_SIZE], byteorder='big')
-    clientMethod = int.from_bytes(package[PACKAGE_SIZE:CLIENT_METHOD_SIZE], byteorder='big')
+    clientMethod = int.from_bytes(package[PACKAGE_SIZE:PACKAGE_SIZE + CLIENT_METHOD_SIZE], byteorder='big')
+
     #        if fileSize > 5000000:  # Hacer las validaciones de verdad
     #            res = packageId.to_bytes(HEADER_SIZE) + FILE_TOO_BIG.to_bytes(STATUS_CODE_SIZE)
     #            print("File too big")
@@ -35,8 +36,8 @@ def getClientHeader(package):
 
 
 def getUploadClientFileMetadata(package):
-    fileSize = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + LENGTH_BYTES], byteorder='big')
-    fileName = package[HEADER_SIZE + LENGTH_BYTES:].decode('utf-8')
+    fileSize = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + FILE_SIZE], byteorder='big')
+    fileName = package[HEADER_SIZE + FILE_SIZE:].decode('utf-8')
     fileName = fileName.rstrip('\0')
     return fileSize, fileName
 
@@ -48,28 +49,31 @@ def getDownloadClientFileMetadata(package):
 
 
 def clientHandshake(packageId, name, path, clientMethod):
+    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
     clientMethodBytes = clientMethod.to_bytes(CLIENT_METHOD_SIZE, byteorder='big')
     if clientMethod == UPLOAD:
-        return uploadClientHandshake(packageId, name, path, clientMethodBytes)
+        return uploadClientHandshake(packageIdBytes, name, path, clientMethodBytes)
     else:
-        return downloadClientHandshake(packageId, name, clientMethodBytes)
+        return downloadClientHandshake(packageIdBytes, name, clientMethodBytes)
 
 
-def uploadClientHandshake(packageId, name, path, clientMethodBytes):
-    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
+def uploadClientHandshake(packageIdBytes, name, path, clientMethodBytes):
     fileSize = os.stat(path).st_size
-    header = packageIdBytes + clientMethodBytes + fileSize.to_bytes(LENGTH_BYTES, byteorder='big') + name.ljust(
-        CHUNK_SIZE - HEADER_SIZE - LENGTH_BYTES, '\0').encode('utf-8')
+    header = (packageIdBytes
+              + clientMethodBytes
+              + fileSize.to_bytes(FILE_SIZE, byteorder='big')
+              + name.ljust(CHUNK_SIZE - PACKAGE_SIZE - FILE_SIZE, '\0').encode('utf-8'))
     return header
 
 
-def downloadClientHandshake(packageId, name, clientMethodBytes):
-    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
-    header = packageIdBytes + clientMethodBytes + name.ljust(CHUNK_SIZE - HEADER_SIZE - LENGTH_BYTES, '\0').encode('utf-8')
+def downloadClientHandshake(packageIdBytes, name, clientMethodBytes):
+    header = (packageIdBytes
+              + clientMethodBytes
+              + name.ljust(CHUNK_SIZE - PACKAGE_SIZE, '\0').encode('utf-8'))
     return header
 
 
-def handleHandshake(package, clientMethod):
+def handleHandshake(package):
     ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
     handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
     newPort = int.from_bytes(package[ACK_SIZE + STATUS_CODE_SIZE: ACK_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
