@@ -73,8 +73,8 @@ def handleHandshake(package, clientMethod):
     ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
     handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
     newPort = int.from_bytes(package[ACK_SIZE + STATUS_CODE_SIZE: ACK_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
-
-    if handshakeStatusCode != STATUS_OK.to_bytes(LENGTH_BYTES, byteorder='big'):
+    print(handshakeStatusCode)
+    if handshakeStatusCode != STATUS_OK:
         print("El servidor respondió con error", handshakeStatusCode)
         exit(1)
 
@@ -85,7 +85,6 @@ def handleChunk(ack, packageId, serverAddress, chunkSocket, file):
     chunkSocket.settimeout(5)
     timeouts = 0
     while True:
-        time.sleep(5)
         print(f'ack: {ack} package_id:  {packageId}')
         try:
             if ack == packageId:
@@ -93,11 +92,9 @@ def handleChunk(ack, packageId, serverAddress, chunkSocket, file):
                 data = file.read(CHUNK_SIZE - HEADER_SIZE)
                 if not data:
                     break
-                print("Data readed:", len(data))
             headerb = packageId.to_bytes(HEADER_SIZE, byteorder='big')
             chunk = headerb + data
             chunkSocket.sendto(chunk, serverAddress)
-            print("Sended:", len(data))
 
             # Esperar la confirmación del servidor para este paquete
             package, _ = chunkSocket.recvfrom(HEADER_SIZE)

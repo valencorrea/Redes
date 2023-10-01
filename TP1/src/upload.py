@@ -18,10 +18,11 @@ def upload(path, host, port, name):
             header = clientHandshake(package_id, name, path, UPLOAD)
             chunkSocket.sendto(header, (host, port))  # mover adentro del handshake
             package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
-
+            print("ANTES DE HANDLE HANDSHAKE")
             ack, handshakeStatusCode, newPort = handleHandshake(package, UPLOAD)
 
             serverAddress = (host, newPort)
+            print("ANTES DE HANDLE chunck")
 
             handleChunk(ack, package_id, serverAddress, chunkSocket, file)
         chunkSocket.close()
