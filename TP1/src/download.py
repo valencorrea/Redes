@@ -1,5 +1,5 @@
-from src.lib.handlers.clientHandler import *
-from src.lib.constants import *
+from lib.handlers.clientHandler import *
+from lib.constants import *
 
 serverName = '127.0.0.1'
 serverPort = 12001
@@ -12,6 +12,6 @@ def main():
     runClient(SERVER_FILE_PATH + fileName, serverName, serverPort, args.name,
               DOWNLOAD)  # upload(args.src, args.host, args.port, args.name)
 
-
+main()
 
 

@@ -1,4 +1,4 @@
-from src.lib.handlers.clientHandler import *
+from lib.handlers.clientHandler import *
 
 serverName = '127.0.0.1'
 serverPort = 12001
