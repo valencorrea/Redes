@@ -6,7 +6,9 @@ serverName = '127.0.0.1'
 
 def main():
     #args = parseArguments()
-    runServer(serverPort, serverName)
-
+    try:
+        runServer(serverPort, serverName)
+    except KeyboardInterrupt:
+        print(" pressed. Exiting gracefully.")
 
 main()
