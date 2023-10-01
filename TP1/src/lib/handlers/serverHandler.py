@@ -6,8 +6,10 @@ from ..constants import *
 
 
 def runServer(serverPort, serverName):
+    print("hola")
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', serverPort))
+        print("antes del while")
         while True:
             package, clientAddress = s.recvfrom(CHUNK_SIZE)
             res, clientMethod = getClientHeader(package)
@@ -68,6 +70,9 @@ def handleServerChunk(res, clientAddress, fileName, fileSize):
         received = 0
         oldId = 0
         with open(fileName, WRITE_MODE) as f:
+            #SI ES SELECT AND REPEAT:
+            #selective_repeat_receive(transferSocket, f, clientAddress, fileSize)
+
             while received < fileSize:  # contemplar perdida de paquetes
                 package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
                 package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')

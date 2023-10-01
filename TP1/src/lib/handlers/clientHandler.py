@@ -3,6 +3,9 @@ import socket
 import os
 
 from ..constants import *
+from ..protocols.selectAndRepeat import selective_repeat_send
+
+
 def parseArguments():
     parser = argparse.ArgumentParser(description="Upload a file to a server.")
     # parser.add_argument('-H', '--host', help="Server IP address", required=True)
@@ -16,6 +19,7 @@ def parseArguments():
     args = parser.parse_args()
     return args  # , group
 
+
 def runClient(path, host, port, name, method):
     with open(path, READ_MODE) as file:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as chunkSocket:
@@ -26,9 +30,13 @@ def runClient(path, host, port, name, method):
             serverAddress = (host, newPort)
 
             handleClientChunk(ack, package_id, serverAddress, chunkSocket, file)
+           #SI POR ARG PASAN SELECT AND REPEAT HAY QUE HACER ESTE SENT
+                #selective_repeat_send(serverAddress, chunkSocket, file)
+
         chunkSocket.close()
 
     file.close()
+
 
 def clientHandshake(packageId, name, path, clientMethod, host, port, chunkSocket):
     packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
@@ -38,6 +46,7 @@ def clientHandshake(packageId, name, path, clientMethod, host, port, chunkSocket
     else:
         header = downloadClientHandshake(packageIdBytes, name, clientMethodBytes)
     chunkSocket.sendto(header, (host, port))
+
 
 def uploadClientHandshake(packageIdBytes, name, path, clientMethodBytes):
     fileSize = os.stat(path).st_size
@@ -54,6 +63,7 @@ def downloadClientHandshake(packageIdBytes, name, clientMethodBytes):
               + name.ljust(CHUNK_SIZE - PACKAGE_SIZE, '\0').encode('utf-8'))
     return header
 
+
 def handleHandshake(package):
     ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
     handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
@@ -64,6 +74,7 @@ def handleHandshake(package):
         exit(1)
 
     return ack, handshakeStatusCode, newPort
+
 
 def handleClientChunk(ack, packageId, serverAddress, chunkSocket, file):
     chunkSocket.settimeout(5)
