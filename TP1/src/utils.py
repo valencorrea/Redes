@@ -21,38 +21,60 @@ def parseArguments():
     return args  # , group
 
 
-def serverHandshake(package):
-    package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
-    fileSize = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + LENGTH_BYTES], byteorder='big')
-    fileName = package[HEADER_SIZE + LENGTH_BYTES:].decode('utf-8')
-    fileName = fileName.rstrip('\0')
+def getClientHeader(package):
+    packageId = int.from_bytes(package[:PACKAGE_SIZE], byteorder='big')
+    clientMethod = int.from_bytes(package[PACKAGE_SIZE:CLIENT_METHOD_SIZE], byteorder='big')
     #        if fileSize > 5000000:  # Hacer las validaciones de verdad
-    #            res = package_id.to_bytes(HEADER_SIZE) + FILE_TOO_BIG.to_bytes(STATUS_CODE_SIZE)
+    #            res = packageId.to_bytes(HEADER_SIZE) + FILE_TOO_BIG.to_bytes(STATUS_CODE_SIZE)
     #            print("File too big")
     #        else:
     # puerto server, puerto cliente, puerto server donde se hace la transferencia
     # levanto hilo con port
     #            print("Status OK")
-    res = package_id.to_bytes(HEADER_SIZE, byteorder='big') + STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big')
-
-    return res, fileSize, fileName
+    return packageId.to_bytes(PACKAGE_SIZE, byteorder='big') + STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big'), clientMethod
 
 
-def clientHandshake(package_id, name, path):
-    package_id_bytes = package_id.to_bytes(HEADER_SIZE, byteorder='big')
+def getUploadClientFileMetadata(package):
+    fileSize = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + LENGTH_BYTES], byteorder='big')
+    fileName = package[HEADER_SIZE + LENGTH_BYTES:].decode('utf-8')
+    fileName = fileName.rstrip('\0')
+    return fileSize, fileName
+
+
+def getDownloadClientFileMetadata(package):
+    fileName = package[HEADER_SIZE:].decode('utf-8')
+    fileName = fileName.rstrip('\0')
+    return fileName
+
+
+def clientHandshake(packageId, name, path, clientMethod):
+    clientMethodBytes = clientMethod.to_bytes(CLIENT_METHOD_SIZE, byteorder='big')
+    if clientMethod == UPLOAD:
+        return uploadClientHandshake(packageId, name, path, clientMethodBytes)
+    else:
+        return downloadClientHandshake(packageId, name, clientMethodBytes)
+
+
+def uploadClientHandshake(packageId, name, path, clientMethodBytes):
+    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
     fileSize = os.stat(path).st_size
-    header = package_id_bytes + fileSize.to_bytes(LENGTH_BYTES, byteorder='big') + name.ljust(
+    header = packageIdBytes + clientMethodBytes + fileSize.to_bytes(LENGTH_BYTES, byteorder='big') + name.ljust(
         CHUNK_SIZE - HEADER_SIZE - LENGTH_BYTES, '\0').encode('utf-8')
-
     return header
 
 
-def handleHandshake(package):
-    ack = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
-    handshakeStatusCode = int.from_bytes(package[HEADER_SIZE:HEADER_SIZE + STATUS_CODE_SIZE], byteorder='big')
-    newPort = int.from_bytes(package[HEADER_SIZE + STATUS_CODE_SIZE: HEADER_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
+def downloadClientHandshake(packageId, name, clientMethodBytes):
+    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
+    header = packageIdBytes + clientMethodBytes + name.ljust(CHUNK_SIZE - HEADER_SIZE - LENGTH_BYTES, '\0').encode('utf-8')
+    return header
 
-    if handshakeStatusCode != STATUS_OK:
+
+def handleHandshake(package, clientMethod):
+    ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
+    handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
+    newPort = int.from_bytes(package[ACK_SIZE + STATUS_CODE_SIZE: ACK_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
+
+    if handshakeStatusCode != STATUS_OK.to_bytes(LENGTH_BYTES, byteorder='big'):
         print("El servidor respondió con error", handshakeStatusCode)
         exit(1)
 
@@ -67,7 +89,7 @@ def handleChunk(ack, packageId, serverAddress, chunkSocket, file):
         print(f'ack: {ack} package_id:  {packageId}')
         try:
             if ack == packageId:
-                packageId += 1  # Incrementar el número de secuencia del paquete
+                packageId = 1 if packageId == 255 else packageId + 1
                 data = file.read(CHUNK_SIZE - HEADER_SIZE)
                 if not data:
                     break

@@ -1,9 +1,9 @@
-from socket import *
+import socket
 from utils import *
 
 serverName = '127.0.0.1'
 serverPort = 12001
-fileName = 'correa-tp-greedy.txt'
+fileName = 'test.txt'
 
 
 def main():
@@ -13,13 +13,13 @@ def main():
 
 def upload(path, host, port, name):
     with open(path, "rb") as file:
-        with socket(AF_INET, SOCK_DGRAM) as chunkSocket:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as chunkSocket:
             package_id = 0
-            header = clientHandshake(package_id, name, path)
-            chunkSocket.sendto(header, (host, port)) # mover adentro del handshake
+            header = clientHandshake(package_id, name, path, UPLOAD)
+            chunkSocket.sendto(header, (host, port))  # mover adentro del handshake
             package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
 
-            ack, handshakeStatusCode, newPort = handleHandshake(package)
+            ack, handshakeStatusCode, newPort = handleHandshake(package, UPLOAD)
 
             serverAddress = (host, newPort)
 

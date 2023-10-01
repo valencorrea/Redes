@@ -21,19 +21,17 @@ def download(path, host, port, name):
     with open(path, "rb") as file:
         with socket(AF_INET, SOCK_DGRAM) as chunkSocket:
             package_id = 0
-            header = clientHandshake(package_id, name, path)
+            header = clientHandshake(package_id, name, path, DOWNLOAD)
             chunkSocket.sendto(header, (host, port))
             package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
 
-            ack, handshakeStatusCode, newPort = handleHandshake(package)
+            ack, handshakeStatusCode, newPort = handleHandshake(package, DOWNLOAD)
 
             serverAddress = (host, newPort)
             handleChunk(ack, package_id, serverAddress, chunkSocket, file)
         chunkSocket.close()
 
     file.close()
-
-
 
 main()
 
