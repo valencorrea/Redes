@@ -76,7 +76,7 @@ def handleServerChunk(res, clientAddress, fileName, fileSize):
             while received < fileSize:  # contemplar perdida de paquetes
                 package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
                 package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
-                data = package[HEADER_SIZE:]
+                data = package[HEADER_SIZE:].decode('utf-8')
                 if (oldId + 1) == package_id:  # Recibi paquete siguiente
                     received += len(data)
                     f.write(data)
