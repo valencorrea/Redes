@@ -6,14 +6,15 @@ import threading
 from utils import *
 
 serverPort = 12001
-path = 'correa-tp-greedy.txt'
+path = 'huevos_revueltos.jpeg'
 serverName = '127.0.0.1'
 
 
 def main():
     args = parseArguments()
-    #upload()
-    download()
+    upload()
+    # download()
+
 
 def download():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -24,10 +25,12 @@ def download():
             package, clientAddress = s.recvfrom(CHUNK_SIZE)
             res, fileSize, fileName = serverHandshake(package)
 
-            thread = threading.Thread(target=handleChunks, args=(res, clientAddress, "lib/client-files/" + fileName, fileSize))
+            thread = threading.Thread(target=handleChunks,
+                                      args=(res, clientAddress, "lib/client-files/" + fileName, fileSize))
             thread.start()
 
     s.close()
+
 
 def upload():
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -37,7 +40,8 @@ def upload():
         while True:
             package, clientAddress = s.recvfrom(CHUNK_SIZE)
             res, fileSize, fileName = serverHandshake(package)
-            thread = threading.Thread(target=handleChunks, args=(res, clientAddress, "lib/server-files/" + fileName, fileSize))
+            thread = threading.Thread(target=handleChunks,
+                                      args=(res, clientAddress, "lib/server-files/" + fileName, fileSize))
             thread.start()
 
     s.close()
@@ -52,20 +56,22 @@ def handleChunks(res, clientAddress, fileName, fileSize):
         paddingSize = CHUNK_SIZE - len(res) - 2
         transferSocket.sendto(res + client_port.to_bytes(2, byteorder='big') + b'\x00' * paddingSize, clientAddress)
 
-        received = 0
-        oldId = 0
         with open(fileName, "wb") as f:
-            while received < fileSize:  # contemplar perdida de paquetes
-                package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
-                package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
-                data = package[HEADER_SIZE:]
-                if (oldId + 1) == package_id:  # Recibi paquete siguiente
-                    print(oldId)
-                    received += len(data)
-                    f.write(data)
-                    oldId = package_id
-                res = oldId.to_bytes(HEADER_SIZE, byteorder='big')
-                transferSocket.sendto(res, clientAddress)
+            selective_repeat_receive(transferSocket, f, clientAddress, fileSize)
+        # received = 0
+        # oldId = 0
+        # with open(fileName, "wb") as f:
+        #     while received < fileSize:  # contemplar perdida de paquetes
+        #         package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
+        #         package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
+        #         data = package[HEADER_SIZE:]
+        #         if (oldId + 1) == package_id:  # Recibi paquete siguiente
+        #             print(oldId)
+        #             received += len(data)
+        #             f.write(data)
+        #             oldId = package_id
+        #         res = oldId.to_bytes(HEADER_SIZE, byteorder='big')
+        #         transferSocket.sendto(res, clientAddress)
 
         f.close()
 

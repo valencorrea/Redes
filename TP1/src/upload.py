@@ -3,7 +3,7 @@ from utils import *
 
 serverName = '127.0.0.1'
 serverPort = 12001
-fileName = 'correa-tp-greedy.txt'
+fileName = 'huevos_revueltos.jpeg'
 
 
 def main():
@@ -13,7 +13,7 @@ def main():
 
 def upload(path, host, port, name):
     with open(path, "rb") as file:
-        with socket(AF_INET, SOCK_DGRAM) as chunkSocket:
+        with socket.socket(AF_INET, SOCK_DGRAM) as chunkSocket:
             package_id = 0
             header = clientHandshake(package_id, name, path)
             chunkSocket.sendto(header, (host, port)) # mover adentro del handshake
@@ -23,7 +23,8 @@ def upload(path, host, port, name):
 
             serverAddress = (host, newPort)
 
-            handleChunk(ack, package_id, serverAddress, chunkSocket, file)
+            # handleChunk(ack, package_id, serverAddress, chunkSocket, file)
+            selective_repeat_send(serverAddress, chunkSocket, file)
         chunkSocket.close()
 
     file.close()
