@@ -12,6 +12,9 @@ def parseArguments():
     # parser.add_argument('-p', '--port', help="Server port", type=int, required=True)
     # parser.add_argument('-s', '--src', help="Source file path", required=True)
     parser.add_argument('-n', '--name', help="File name", required=True)
+    protocol = parser.add_mutually_exclusive_group(required=True)
+    protocol.add_argument('-saw', '--stopAndWait', help="use stop and wait protocol", action="store_true")
+    protocol.add_argument('-sr', '--selectiveRepeat', help="use selective repeat protocol", action="store_true")
     # group = parser.add_mutually_exclusive_group()
     # group.add_argument('-v', '--verbose', help="Increase output verbosity", action="store_true")
     # group.add_argument('-q', '--quiet', help="Decrease output verbosity", action="store_true")
@@ -20,18 +23,18 @@ def parseArguments():
     return args  # , group
 
 
-def runClient(path, host, port, name, method):
+def runClient(path, host, port, args, method):
     with open(path, READ_MODE) as file:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as chunkSocket:
             package_id = 0
-            clientHandshake(package_id, name, path, method, host, port, chunkSocket)
+            clientHandshake(package_id, args.name, path, method, host, port, chunkSocket)
             package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
             ack, handshakeStatusCode, newPort = handleHandshake(package)
             serverAddress = (host, newPort)
-
-            handleClientChunk(ack, package_id, serverAddress, chunkSocket, file)
-           #SI POR ARG PASAN SELECT AND REPEAT HAY QUE HACER ESTE SENT
-                #selective_repeat_send(serverAddress, chunkSocket, file)
+            if args.selectiveRepeat:
+                selective_repeat_send(serverAddress, chunkSocket, file)
+            else:
+                handleClientChunk(ack, package_id, serverAddress, chunkSocket, file)
 
         chunkSocket.close()
 

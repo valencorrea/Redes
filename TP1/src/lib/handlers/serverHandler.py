@@ -5,8 +5,8 @@ import os
 from ..constants import *
 
 
-def runServer(serverPort, serverName):
-    print("hola")
+def runServer(serverPort, serverName, args):
+    print(args)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', serverPort))
         print("antes del while")
