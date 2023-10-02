@@ -1,10 +1,8 @@
-from socket import *
-
 from lib.constants import *
 from lib.handlers.clientHandler import runClient, parseArguments
 
 serverName = '127.0.0.1'
-serverPort = 12001
+serverPort = 12002
 fileName = 'a.txt'
 fileNameIMG = 'huevos_revueltos.jpeg'
 

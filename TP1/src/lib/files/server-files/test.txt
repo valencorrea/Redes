@@ -1,151 +1,65 @@
-import sys
-import math
+Karma
+Taylor Swift
 
-NOT_MATCHED = "NM";
-MATCHED = "M";
+You're talkin’ shit for the hell of it
+Addicted to betrayal, but you’re relevant
+You’re terrified to look down
+‘Cause if you dare, you’ll see the glare
+Of everyone you burned just to get there
+It’s coming back around
 
-# ----------------------------
-# ------ File Functions ------
-# ----------------------------
+And I keep my side of the street clean
+You wouldn’t know what I mean
 
-# Function that receives a coords list and the actual file line, and appends it to the list. 
-def saveCoord(coordsList, fileLine):
-	splitBySpace=fileLine.split(' ');
-	coordsList.insert(0, ((float(splitBySpace[0].strip()), float(splitBySpace[1].strip()))));
+‘Cause karma is my boyfriend, karma is a god
+Karma is the breeze in my hair on the weekend
+Karma's a relaxing thought
+Aren't you envious that for you it's not?
+Sweet like honey, karma is a cat
+Purring in my lap 'cause it loves me
+Flexing like a goddamn acrobat
+Me and karma vibe like that
 
-# Function that receives a file path and use it to save its coords.
-def getCoords(filePath):
-	file = open(filePath, "r");
-	coordsList = list();
+Spidеr-boy, king of thieves
+Weavе your little webs of opacity
+My pennies made your crown
+Trick me once, trick me twice
+Don’t you know that cash ain’t the only price?
+It’s coming back around
 
-	for line in file:
-	  saveCoord(coordsList, line);
+And I keep my side of the street clean
+You wouldn’t know what I mean
 
-	file.close();
-	return coordsList;
+‘Cause karma is my boyfriend, karma is a god
+Karma is the breeze in my hair on the weekend
+Karma's a relaxing thought
+Aren't you envious that for you it's not?
+Sweet like honey, karma is a cat
+Purring in my lap 'cause it loves me
+Flexing like a goddamn acrobat
+Me and karma vibe like that
 
-# ----------------------------
-# --- Dictionary Functions ---
-# ----------------------------
+Ask me what I learned from all those years
+Ask me what I earned from all those tears
+Ask me why so many fade, but I'm still here (I'm still here)
 
-# Function that returns the dictionary key related to the coordinate received in parameters.
-# It assumes that there will not be two coordinates identically in b domain.
-def getKey(coord): 
-	return str(coord[0]) + str(coord[1]); 
+‘Cause karma is the thunder, rattling your ground
+Karma’s on your scent like a bounty hunter
+Karma’s gonna track you down
+Step by step, from town to town
+Sweet like justice, karma is a queen
+Karma takes all my friends to the summit
+Karma is the guy on the screen
+Comin’ straight home to me
 
-# Function that receives a coordinate and validates if it is already matched.
-def isMatched(coord, dictionary):
-	return True if dictionary[getKey(coord)] == MATCHED else False
+‘Cause karma is my boyfriend, karma is a god
+Karma is the breeze in my hair on the weekend
+Karma's a relaxing thought
+Aren't you envious that for you it's not?
+Sweet like honey, karma is a cat
+Purring in my lap 'cause it loves me
+Flexing like a goddamn acrobat
+Me and karma vibe like that
 
-# Function that receives a coordinate and mark it as matched.
-def markAsMatched(coord, dictionary):
-	dictionary.update({getKey(coord): MATCHED});
-
-# Function that creates a dictionary to save b coordinates states.
-def getStateDictionary(coords):
-	stateDictionary = {};
-
-	for coord in coords:
-		stateDictionary[getKey(coord)] = NOT_MATCHED;
-
-	return stateDictionary;
-
-# ----------------------------
-# ------ Math Functions ------
-# ----------------------------
-
-# Function that returns if a coord dominates b coord.
-def dominates(a, b):
-	return ((float(a[0]) >= float(b[0])) & (float(a[1]) >= float(b[1])));
-		
-# Function that sorts a tuple list based in their distance from the beginning. Values goes from highest to lower 
-def sort(coords):
-	return sorted(coords, key=lambda coord: math.sqrt(coord[0]**2 + coord[1]**2), reverse=False);
-
-# Function that verifies if a cord has any negative x or y value.
-def hasAnyNegatives(coord):
-	return True if ((coord[0] < 0) or (coord[1] < 0)) else False;
-
-# Function that receives a cord and the actual lambdas and update them in case of necessary.
-def getBiggestLambda(coord, xLambda, yLambda):
-	biggestXLambda, biggestYLambda = xLambda, yLambda; 
-
-	if coord[0] < xLambda:
-		biggestXLambda = coord[0];
-
-	if coord[1] < yLambda:
-		biggestYLambda = coord[1];
-
-	return biggestXLambda, biggestYLambda;
-
-# Function that iterates for both cords lists and get the x and y lambda more negative.
-def getLambdas(aCoords, bCoords):
-	xLambda, yLambda = 0, 0;
-
-	for coord in aCoords + bCoords:
-		if hasAnyNegatives(coord):
-			xLambda, yLambda = getBiggestLambda(coord, xLambda, yLambda);
-
-	return abs(xLambda), abs(yLambda);
-
-# Function that returns a new coords list with the lambda values applied.
-def applyLambdas(coords, xLambda, yLambda):
-	newCoords = list();
-
-	for coord in coords:
-		newCoords.insert(0, (coord[0] + xLambda, coord[1] + yLambda));
-
-	return newCoords;
-
-# ----------------------------
-# - User interface Functions -
-# ----------------------------
-
-# Function that show the user the information about the match.
-def showMatchingInformation(matchingSize, matchings):
-	print("Tamaño del matching: " + str(matchingSize)); 
-	print("Matching: \n\n(A → B)\n ");
-
-	for match in matchings:
-		print(str(match[0]) + " → " + str(match[1]) + "\n"); 
-
-# ----------------------------
-# ----- Domain Functions -----
-# ----------------------------
-
-# Function that adds a match to M. The coordinates added have their original value, without lambdas. 
-def addMatch(aCoord, bCoord, xLambda, yLambda, matchings):
-	originalACoord = (aCoord[0] - xLambda, aCoord[1] - yLambda);
-	originalBCoord = (bCoord[0] - xLambda, bCoord[1] - yLambda);
-	
-	matchings.insert(0, (originalACoord, originalBCoord));
-
-# ----------------------------
-# ------- Main Function ------
-# ----------------------------
-
-def main():
-	aCoords, bCoords = getCoords(sys.argv[1]), getCoords(sys.argv[2]);
-	xLambda, yLambda = getLambdas(aCoords, bCoords);
-	aCoords, bCoords = applyLambdas(aCoords, xLambda, yLambda), applyLambdas(bCoords, xLambda, yLambda);
-	aCoords, bCoords = sort(aCoords), sort(bCoords);
-
-	bStateDictionary = getStateDictionary(bCoords);
-
-	k = 0;
-	matchings = list();
-
-	while len(aCoords) != 0: 
-		aCoord = aCoords.pop(0); 
-
-		for bCoord in bCoords:
-			if dominates(aCoord, bCoord) and (not isMatched(bCoord, bStateDictionary)): 
-				addMatch(aCoord, bCoord, xLambda, yLambda, matchings);
-				markAsMatched(bCoord, bStateDictionary); 
-				k = k + 1;
-				break;
-
-	showMatchingInformation(k, matchings);
-
-if __name__ == "__main__":
-    main()
+Karma is my boyfriend, karma is a god
+Karma’s a relaxing thought
