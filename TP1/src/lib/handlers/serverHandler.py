@@ -19,7 +19,7 @@ def runServer(args):
                 package, client_address = s.recvfrom(CHUNK_SIZE)
                 new_thread = threading.Thread(
                     target=handle_connection,
-                    args=(package, client_address, args.selectiveRepeat)
+                    args=(package, client_address, args.selectiveRepeat, args.storage)
                 )
                 new_thread.start()
                 threads.append(new_thread)
@@ -37,7 +37,7 @@ def runServer(args):
                 exit(1)
 
 
-def handle_connection(package, client_address, algorithm):
+def handle_connection(package, client_address, algorithm, storage_path):
     with (socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s):
         client_method = int.from_bytes(package[ID_SIZE:ID_SIZE + CLIENT_METHOD_SIZE], byteorder='big')
         if client_method == UPLOAD:
@@ -45,7 +45,7 @@ def handle_connection(package, client_address, algorithm):
                                        byteorder='big')
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE + FILE_SIZE:].decode('utf-8')
             file_name = file_name.rstrip('\0')
-            with open(file_name, WRITE_MODE) as f:
+            with open(storage_path + '/' + file_name, WRITE_MODE) as f:
                 s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                          STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
                 if algorithm == STOP_AND_WAIT:
@@ -57,7 +57,7 @@ def handle_connection(package, client_address, algorithm):
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE:].decode('utf-8')
             file_name = file_name.rstrip('\0')
             try:
-                with open(file_name, READ_MODE) as f:
+                with open(storage_path + '/' + file_name, READ_MODE) as f:
                     file_size = os.path.getsize(file_name)
                     s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                              STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big') +
