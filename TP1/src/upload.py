@@ -11,7 +11,7 @@ fileNameIMG = 'huevos_revueltos.jpeg'
 
 def main():
     args = parseArguments() #arg, group = parseArguments()
-    runClient(CLIENT_FILE_PATH + fileName, serverName, serverPort, args, UPLOAD) #VALU
+    runClient(CLIENT_FILE_PATH + fileName, serverName, serverPort, args, UPLOAD)
 
 
 main()

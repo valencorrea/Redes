@@ -4,6 +4,7 @@ import os
 
 from ..constants import *
 from ..protocols.selectAndRepeat import selective_repeat_send
+from ..protocols.stopAndWait import stop_and_wait_send
 
 
 def parseArguments():
@@ -34,7 +35,8 @@ def runClient(path, host, port, args, method):
             if args.selectiveRepeat:
                 selective_repeat_send(serverAddress, chunkSocket, file)
             else:
-                handleClientChunk(ack, package_id, serverAddress, chunkSocket, file)
+                #aca seria Stop and Wait
+                stop_and_wait_send(ack, package_id, serverAddress, chunkSocket, file)
 
         chunkSocket.close()
 
@@ -79,29 +81,3 @@ def handleHandshake(package):
     return ack, handshakeStatusCode, newPort
 
 
-def handleClientChunk(ack, packageId, serverAddress, chunkSocket, file):
-    chunkSocket.settimeout(5)
-    timeouts = 0
-    while True:
-        print(f'ack: {ack} package_id:  {packageId}')
-        try:
-            if ack == packageId:
-                packageId = 1 if packageId == 255 else packageId + 1
-                data = file.read(CHUNK_SIZE - HEADER_SIZE)
-                if not data:
-                    break
-            headerb = packageId.to_bytes(HEADER_SIZE, byteorder='big')
-            chunk = headerb + data
-            chunkSocket.sendto(chunk, serverAddress)
-
-            # Esperar la confirmación del servidor para este paquete
-            package, _ = chunkSocket.recvfrom(HEADER_SIZE)
-            ack = int.from_bytes(package, byteorder='big')
-            print(f'Confirmation received for pacakge {ack}')
-            timeouts = 0
-        except socket.timeout:
-            print("hubo timeout")
-            timeouts += 1
-            if timeouts == MAX_TIMEOUTS:
-                print("Too many timeouts, connection abort")
-                break

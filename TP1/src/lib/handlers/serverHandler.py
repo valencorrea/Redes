@@ -3,10 +3,12 @@ import threading
 import os
 
 from ..constants import *
+from ..protocols.selectAndRepeat import selective_repeat_receive
+from ..protocols.stopAndWait import stop_and_wait_receive
 
 
-def runServer(serverPort, serverName, args):
-    print(args)
+def runServer(serverPort, serverName, terminalArgs):
+    print(terminalArgs)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', serverPort))
         print("antes del while")
@@ -17,12 +19,12 @@ def runServer(serverPort, serverName, args):
             if clientMethod == UPLOAD:
                 fileSize, fileName = getUploadClientFileMetadata(package)
                 print("Uploading " + fileName + " ...")
-                callClientMethod(res, fileSize, clientAddress, SERVER_FILE_PATH + fileName)
+                callClientMethod(res, fileSize, clientAddress, SERVER_FILE_PATH + fileName, terminalArgs)
             elif clientMethod == DOWNLOAD:
                 fileName = getDownloadClientFileMetadata(package)
                 print("Downloading " + fileName + " ...")
                 fileSize = os.stat(SERVER_FILE_PATH + str(fileName)).st_size
-                callClientMethod(res, fileSize, clientAddress, CLIENT_FILE_PATH + str(fileName))
+                callClientMethod(res, fileSize, clientAddress, CLIENT_FILE_PATH + str(fileName),terminalArgs)
     s.close()
 
 
@@ -39,8 +41,8 @@ def getDownloadClientFileMetadata(package):
     return fileName
 
 
-def callClientMethod(res, fileSize, clientAddress, path):
-    thread = threading.Thread(target=handleServerChunk, args=(res, clientAddress, path, fileSize))
+def callClientMethod(res, fileSize, clientAddress, path, terminalArgs):
+    thread = threading.Thread(target=handleServerChunk, args=(res, clientAddress, path, fileSize, terminalArgs))
     thread.start()
 
 
@@ -59,7 +61,7 @@ def getClientHeader(package):
                                                                                   byteorder='big'), clientMethod
 
 
-def handleServerChunk(res, clientAddress, fileName, fileSize):
+def handleServerChunk(res, clientAddress, fileName, fileSize, terminalArgs):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as transferSocket:
         transferSocket.bind(('localhost', 0))
         client_port = transferSocket.getsockname()[1]
@@ -67,22 +69,11 @@ def handleServerChunk(res, clientAddress, fileName, fileSize):
         paddingSize = CHUNK_SIZE - len(res) - 2
         transferSocket.sendto(res + client_port.to_bytes(2, byteorder='big') + b'\x00' * paddingSize, clientAddress)
 
-        received = 0
-        oldId = 0
         with open(fileName, WRITE_MODE) as f:
-            #SI ES SELECT AND REPEAT:
-            #selective_repeat_receive(transferSocket, f, clientAddress, fileSize)
-
-            while received < fileSize:  # contemplar perdida de paquetes
-                package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
-                package_id = int.from_bytes(package[:HEADER_SIZE], byteorder='big')
-                data = package[HEADER_SIZE:].decode('utf-8')
-                if (oldId + 1) == package_id:  # Recibi paquete siguiente
-                    received += len(data)
-                    f.write(data)
-                    oldId = package_id
-                res = oldId.to_bytes(HEADER_SIZE, byteorder='big')
-                transferSocket.sendto(res, clientAddress)
+            if terminalArgs.selectiveRepeat:
+                selective_repeat_receive(transferSocket, f, clientAddress, fileSize)
+            else:
+                stop_and_wait_receive(transferSocket, f, clientAddress, fileSize)
 
         f.close()
         print("Operation successfully done.")
