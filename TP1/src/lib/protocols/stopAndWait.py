@@ -17,23 +17,25 @@ def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
         transferSocket.sendto(res, clientAddress)
 
 
-def stop_and_wait_send(ack, packageId, serverAddress, chunkSocket, file):
-    chunkSocket.settimeout(5)
+def stop_and_wait_send(s, f, send_address):
+    s.settimeout(5)
     timeouts = 0
+    packageId = 0
+    ack = 0
     while True:
         print(f'ack: {ack} package_id:  {packageId}')
         try:
             if ack == packageId:
                 packageId = 1 if packageId == 255 else packageId + 1
-                data = file.read(CHUNK_SIZE - HEADER_SIZE)
+                data = f.read(CHUNK_SIZE - HEADER_SIZE)
                 if not data:
                     break
             headerb = packageId.to_bytes(HEADER_SIZE, byteorder='big')
             chunk = headerb + data
-            chunkSocket.sendto(chunk, serverAddress)
+            s.sendto(chunk, send_address)
 
             # Esperar la confirmación del servidor para este paquete
-            package, _ = chunkSocket.recvfrom(HEADER_SIZE)
+            package, _ = s.recvfrom(HEADER_SIZE)
             ack = int.from_bytes(package, byteorder='big')
             print(f'Confirmation received for pacakge {ack}')
             timeouts = 0

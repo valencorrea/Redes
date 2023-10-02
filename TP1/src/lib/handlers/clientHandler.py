@@ -3,8 +3,8 @@ import socket
 import os
 
 from ..constants import *
-from ..protocols.selectAndRepeat import selective_repeat_send
-from ..protocols.stopAndWait import stop_and_wait_send
+from ..protocols.selectAndRepeat import selective_repeat_send, selective_repeat_receive
+from ..protocols.stopAndWait import stop_and_wait_send, stop_and_wait_receive
 
 
 def parseArguments():
@@ -25,47 +25,66 @@ def parseArguments():
 
 
 def runClient(path, host, port, args, method):
-    with open(path, READ_MODE) as file:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as chunkSocket:
-            package_id = 0
-            clientHandshake(package_id, args.name, path, method, host, port, chunkSocket)
-            package, serverAddress = chunkSocket.recvfrom(CHUNK_SIZE)  # serverAddress: ('123.0.8.0', 55555)
-            ack, handshakeStatusCode, newPort = handleHandshake(package)
-            serverAddress = (host, newPort)
-            if args.selectiveRepeat:
-                selective_repeat_send(serverAddress, chunkSocket, file)
-            else:
-                #aca seria Stop and Wait
-                stop_and_wait_send(ack, package_id, serverAddress, chunkSocket, file)
-
-        chunkSocket.close()
-
-    file.close()
-
-
-def clientHandshake(packageId, name, path, clientMethod, host, port, chunkSocket):
-    packageIdBytes = packageId.to_bytes(PACKAGE_SIZE, byteorder='big')
-    clientMethodBytes = clientMethod.to_bytes(CLIENT_METHOD_SIZE, byteorder='big')
-    if clientMethod == UPLOAD:
-        header = uploadClientHandshake(packageIdBytes, name, path, clientMethodBytes)
-    else:
-        header = downloadClientHandshake(packageIdBytes, name, clientMethodBytes)
-    chunkSocket.sendto(header, (host, port))
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        if method == UPLOAD:
+            send_address = upload_handshake(s, host, port, args.name, path)
+            with open(path, READ_MODE) as f:
+                if args.selectiveRepeat:
+                    selective_repeat_send(s, f, send_address)
+                else:
+                    stop_and_wait_send(s, f, send_address)
+        elif method == DOWNLOAD:
+            receive_address, file_size = download_handshake(s, host, port, args.name)
+            with open(path, WRITE_MODE) as f:
+                if args.selectiveRepeat:
+                    selective_repeat_receive(s, f, receive_address, file_size)
+                else:
+                    stop_and_wait_receive(s, f, receive_address, file_size)
 
 
-def uploadClientHandshake(packageIdBytes, name, path, clientMethodBytes):
-    fileSize = os.stat(path).st_size
+def upload_handshake(s, host, port, name, path):
+    file_size = os.path.getsize(path)
+    header = (int(0).to_bytes(ID_SIZE, byteorder='big')
+              + UPLOAD.to_bytes(CLIENT_METHOD_SIZE, byteorder='big')
+              + file_size.to_bytes(FILE_SIZE, byteorder='big')
+              + name.ljust(CHUNK_SIZE - ID_SIZE - FILE_SIZE - CLIENT_METHOD_SIZE, '\0').encode('utf-8'))
+    s.sendto(header, (host, port))
+    package, upload_address = s.recvfrom(ID_SIZE + STATUS_CODE_SIZE)
+    handshake_response_code = int.from_bytes(package[ID_SIZE:ID_SIZE + STATUS_CODE_SIZE], byteorder='big')
+    if handshake_response_code != STATUS_OK:
+        print('El servidor respondio con error: ', handshake_response_code)
+        exit(1)
+    return upload_address
+
+
+def download_handshake(s, host, port, name):
+    header = (int(0).to_bytes(ID_SIZE, byteorder='big')
+              + DOWNLOAD.to_bytes(CLIENT_METHOD_SIZE, byteorder='big')
+              + name.ljust(CHUNK_SIZE - ID_SIZE - CLIENT_METHOD_SIZE, '\0').encode('utf-8'))
+    s.sendto(header, (host, port))
+    package, download_address = s.recvfrom(ID_SIZE + STATUS_CODE_SIZE + FILE_SIZE)
+    handshake_response_code = int.from_bytes(package[ID_SIZE:ID_SIZE + STATUS_CODE_SIZE], byteorder='big')
+    if handshake_response_code != STATUS_OK:
+        print('El servidor respondio con error: ', handshake_response_code)
+        exit(1)
+    file_size = int.from_bytes(package[ID_SIZE + STATUS_CODE_SIZE:ID_SIZE + STATUS_CODE_SIZE + FILE_SIZE], byteorder='big')
+    return download_address, file_size
+
+
+def uploadClientHandshake(packageIdBytes, name, path, method_b):
+    file_size = os.path.getsize(path)
     header = (packageIdBytes
-              + clientMethodBytes
-              + fileSize.to_bytes(FILE_SIZE, byteorder='big')
-              + name.ljust(CHUNK_SIZE - PACKAGE_SIZE - FILE_SIZE, '\0').encode('utf-8'))
-    return header
+              + method_b
+              + file_size.to_bytes(FILE_SIZE, byteorder='big')
+              + name.ljust(CHUNK_SIZE - ID_SIZE - FILE_SIZE, '\0').encode('utf-8'))
+
+    # return header
 
 
 def downloadClientHandshake(packageIdBytes, name, clientMethodBytes):
     header = (packageIdBytes
               + clientMethodBytes
-              + name.ljust(CHUNK_SIZE - PACKAGE_SIZE, '\0').encode('utf-8'))
+              + name.ljust(CHUNK_SIZE - ID_SIZE, '\0').encode('utf-8'))
     return header
 
 

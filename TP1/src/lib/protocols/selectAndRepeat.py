@@ -4,6 +4,7 @@ from queue import PriorityQueue
 
 from ..constants import *
 
+
 class Package:
     def __init__(self, package_id, data):
         self.__id = package_id
@@ -54,7 +55,7 @@ def wait_for_ack(s):
         print('socket timeout')
 
 
-def selective_repeat_send(server_address, s, file):
+def selective_repeat_send(s, f, send_address):
     sent_window = []
     all_file_read = False
     newest_package_id = 0
@@ -63,13 +64,13 @@ def selective_repeat_send(server_address, s, file):
         # fill the window
         print('len(sent_window)', len(sent_window))
         while len(sent_window) < MAX_WINDOW_SIZE and not all_file_read:
-            data = file.read(CHUNK_SIZE - HEADER_SIZE)
+            data = f.read(CHUNK_SIZE - HEADER_SIZE)
             if not data:
                 all_file_read = True
                 break
             newest_package_id += 1
             package = Package(newest_package_id, data)
-            s.sendto(package.serialize_id_and_data(), server_address)
+            s.sendto(package.serialize_id_and_data(), send_address)
             print('sent package', newest_package_id)
             package.set_timestamp()
             sent_window.append(package)
@@ -93,7 +94,7 @@ def selective_repeat_send(server_address, s, file):
         # resend all expired
         for package in sent_window:
             if package.has_expired():
-                s.sendto(package.serialize_id_and_data(), server_address)
+                s.sendto(package.serialize_id_and_data(), send_address)
                 package.set_timestamp()
                 print('Resent: ', package.get_id())
 
