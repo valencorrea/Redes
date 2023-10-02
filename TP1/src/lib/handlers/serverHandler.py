@@ -7,8 +7,9 @@ from ..protocols.selectAndRepeat import selective_repeat_receive, selective_repe
 from ..protocols.stopAndWait import stop_and_wait_receive, stop_and_wait_send
 
 
-def runServer(serverPort, serverName, args):
+def runServer(args):
     print(args)
+    serverPort, serverName = args.port, args.host
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', serverPort))
         print("Starting server at", serverName, ':', serverPort)
@@ -28,8 +29,10 @@ def runServer(serverPort, serverName, args):
 
         except KeyboardInterrupt:
             try:
+                print("closing...")
                 for thread in threads:
                     thread.join()
+                print("server closed successfully")
             except KeyboardInterrupt:
                 exit(1)
 
@@ -65,7 +68,7 @@ def handle_connection(package, client_address, algorithm):
                     else:
                         selective_repeat_send(s, f, client_address)
             except OSError as err:
-                print('Error al intentar descargar el archivo: ', err)
+                print('error while downloading file: ', err)
                 s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                          ERR_FILE_NOT_FOUND.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
     print('finished')
