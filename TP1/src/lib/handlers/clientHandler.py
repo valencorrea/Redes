@@ -38,9 +38,9 @@ def run_client(args, method):
                 exit(1)
             with open(args.dst, WRITE_MODE) as f:
                 if args.selectiveRepeat:
-                    selective_repeat_receive(s, f, receive_address, file_size)
+                    selective_repeat_receive(s, f, receive_address, file_size, log_level)
                 else:
-                    stop_and_wait_receive(s, f, receive_address, file_size)
+                    stop_and_wait_receive(s, f, receive_address, file_size, log_level)
 
 
 def upload_handshake(s, host, port, name, path, log_level):
