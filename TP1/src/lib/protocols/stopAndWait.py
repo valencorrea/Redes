@@ -8,8 +8,11 @@ def stop_and_wait_receive(s, f, address, file_size, log_level):
     received = 0
     ack = 0
     s.settimeout(HANDSHAKE_TIMEOUT)
+
+    log('receiving file...', LogLevel.LOW, log_level)
     log('Starting receive with stop and wait', LogLevel.HIGH, log_level)
     while received < file_size:
+        log(f'received: {received} from total: {file_size}', LogLevel.HIGH, log_level)
         try:
             package, address = s.recvfrom(CHUNK_SIZE)
         except:
@@ -31,6 +34,7 @@ def stop_and_wait_send(s, f, address, log_level):
     package_id = 0
     ack = 0
     data = ''
+    log('sending file...', LogLevel.LOW, log_level)
     log('Starting send with stop and wait', LogLevel.HIGH, log_level)
     while True:
         log(f'ack: {ack} package_id:  {package_id}', LogLevel.HIGH, log_level)

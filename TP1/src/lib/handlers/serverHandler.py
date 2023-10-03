@@ -51,27 +51,33 @@ def handle_connection(package, client_address, algorithm, storage_path, log_leve
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE + FILE_SIZE:].decode('utf-8')
             file_name = file_name.rstrip('\0')
             with open(storage_path + '/' + file_name, WRITE_MODE) as f:
-                s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
-                         STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
-                if algorithm == STOP_AND_WAIT:
-                    stop_and_wait_receive(s, f, client_address, file_size, log_level)
-                else:
-                    selective_repeat_receive(s, f, client_address, file_size, log_level)
+                try:
+                    s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
+                             STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
+                    if algorithm == STOP_AND_WAIT:
+                        stop_and_wait_receive(s, f, client_address, file_size, log_level)
+                    else:
+                        selective_repeat_receive(s, f, client_address, file_size, log_level)
+                finally:
+                    f.close()
 
         elif client_method == DOWNLOAD:
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE:].decode('utf-8')
             file_name = file_name.rstrip('\0')
             try:
                 with open(storage_path + '/' + file_name, READ_MODE) as f:
-                    file_size = os.path.getsize(storage_path + '/' + file_name)
-                    s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
-                             STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big') +
-                             file_size.to_bytes(FILE_SIZE, byteorder='big'),
-                             client_address)
-                    if algorithm == STOP_AND_WAIT:
-                        stop_and_wait_send(s, f, client_address, log_level)
-                    else:
-                        selective_repeat_send(s, f, client_address, log_level)
+                    try:
+                        file_size = os.path.getsize(storage_path + '/' + file_name)
+                        s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
+                                 STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big') +
+                                 file_size.to_bytes(FILE_SIZE, byteorder='big'),
+                                 client_address)
+                        if algorithm == STOP_AND_WAIT:
+                            stop_and_wait_send(s, f, client_address, log_level)
+                        else:
+                            selective_repeat_send(s, f, client_address, log_level)
+                    finally:
+                        f.close()
             except OSError as err:
                 log(f'error while downloading file: {err}', LogLevel.LOW, log_level)
                 s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +

@@ -25,10 +25,13 @@ def run_client(args, method):
             if not path.exists():
                 log('The file does not exist', LogLevel.LOW, log_level)
             with open(args.src, READ_MODE) as f:
-                if args.selectiveRepeat:
-                    selective_repeat_send(s, f, send_address, log_level)
-                else:
-                    stop_and_wait_send(s, f, send_address, log_level)
+                try:
+                    if args.selectiveRepeat:
+                        selective_repeat_send(s, f, send_address, log_level)
+                    else:
+                        stop_and_wait_send(s, f, send_address, log_level)
+                finally:
+                    f.close()
         elif method == DOWNLOAD:
             try:
                 receive_address, file_size = download_handshake(s, host, port, args.name, log_level)
@@ -37,10 +40,13 @@ def run_client(args, method):
                 log('HANDSHAKE FAILED', LogLevel.HIGH, log_level)
                 exit(1)
             with open(args.dst, WRITE_MODE) as f:
-                if args.selectiveRepeat:
-                    selective_repeat_receive(s, f, receive_address, file_size, log_level)
-                else:
-                    stop_and_wait_receive(s, f, receive_address, file_size, log_level)
+                try:
+                    if args.selectiveRepeat:
+                        selective_repeat_receive(s, f, receive_address, file_size, log_level)
+                    else:
+                        stop_and_wait_receive(s, f, receive_address, file_size, log_level)
+                finally:
+                    f.close()
 
 
 def upload_handshake(s, host, port, name, path, log_level):
