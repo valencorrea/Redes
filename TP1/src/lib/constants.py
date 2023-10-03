@@ -1,9 +1,3 @@
-# Status codes
-STATUS_OK = 0
-ERR_FILE_TOO_BIG = 1
-ERR_FILE_NOT_FOUND = 2
-ERR_TOO_MANY_CONNECTIONS = 3
-
 # Connections
 MAX_CONNECTIONS = 10
 
@@ -38,3 +32,16 @@ SERVER_FILE_PATH = "lib/files/server-files/"
 STOP_AND_WAIT = False
 
 MAXIMUM_RETRIES = 5
+
+# Status codes
+STATUS_OK = 0
+ERR_FILE_TOO_BIG = 1
+ERR_FILE_NOT_FOUND = 2
+ERR_TOO_MANY_CONNECTIONS = 3
+
+ERR_MESSAGES = {
+    STATUS_OK: "OK",
+    ERR_FILE_TOO_BIG: "The file you are trying to transfer is too big",
+    ERR_FILE_NOT_FOUND: "File doesn't exist",
+    ERR_TOO_MANY_CONNECTIONS: "The server has too many connections. Try again later."
+}

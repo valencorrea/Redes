@@ -11,14 +11,25 @@ from ..protocols.stopAndWait import stop_and_wait_receive, stop_and_wait_send
 def run_server(args):
     server_port, server_name = args.port, args.host
     log_level = retrieve_level(args.verbose, args.quiet)
+    if not os.path.exists(args.storage):
+        log(f'Storage path {args.storage} doesn\'t exist', LogLevel.LOW, log_level)
+        return
+    if args.port < 1024:
+        log(f'Can\'t use reserved port {args.port}', LogLevel.LOW, log_level)
+        return
+    if args.port > 65535:
+        log(f'Can\'t use non existent port {args.port}', LogLevel.LOW, log_level)
+        return
+
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', server_port))
-        log(f'Starting server at {server_name}:  {server_port}', LogLevel.LOW, log_level)
+        log(f'Starting server at {server_name}:{server_port}', LogLevel.LOW, log_level)
         threads = []
         try:
             while True:
                 log('waiting for new connection', LogLevel.HIGH, log_level)
                 package, client_address = s.recvfrom(CHUNK_SIZE)
+
                 if len(threads) > MAX_CONNECTIONS:
                     reject_connection(s, client_address)
                 log(f'new connection at {client_address}', LogLevel.HIGH, log_level)
@@ -50,6 +61,7 @@ def handle_connection(package, client_address, algorithm, storage_path, log_leve
                                        byteorder='big')
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE + FILE_SIZE:].decode('utf-8')
             file_name = file_name.rstrip('\0')
+
             with open(storage_path + '/' + file_name, WRITE_MODE) as f:
                 try:
                     s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
@@ -58,6 +70,9 @@ def handle_connection(package, client_address, algorithm, storage_path, log_leve
                         stop_and_wait_receive(s, f, client_address, file_size, log_level)
                     else:
                         selective_repeat_receive(s, f, client_address, file_size, log_level)
+                except:
+                    if os.path.exists(storage_path + '/' + file_name):
+                        os.remove(storage_path + '/' + file_name)
                 finally:
                     f.close()
 
