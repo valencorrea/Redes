@@ -7,12 +7,12 @@ from ..protocols.selectAndRepeat import selective_repeat_receive, selective_repe
 from ..protocols.stopAndWait import stop_and_wait_receive, stop_and_wait_send
 
 
-def runServer(args):
+def run_server(args):
     print(args)
-    serverPort, serverName = args.port, args.host
+    server_port, server_name = args.port, args.host
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.bind(('', serverPort))
-        print("Starting server at", serverName, ':', serverPort)
+        s.bind(('', server_port))
+        print("Starting server at", server_name, ':', server_port)
         threads = []
         try:
             while True:

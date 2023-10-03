@@ -65,7 +65,6 @@ def wait_for_ack(s):
 
 def selective_repeat_send(s, f, send_address):
     sent_window = []
-    acks = []
     all_file_read = False
     newest_package_id = 0
     s.settimeout(TIMEOUT)
@@ -91,7 +90,6 @@ def selective_repeat_send(s, f, send_address):
 
         # mark the acknowledged packages as received
         if ack:
-            acks.append(ack)
             for package in sent_window:
                 print('package:', package.get_id(), 'ack', package.has_been_received())
                 if package.has_the_id(ack):
@@ -118,15 +116,15 @@ def selective_repeat_send(s, f, send_address):
                 print('Resent: ', package.get_id())
 
 
-def selective_repeat_receive(s, file, client_address, fileSize):
+def selective_repeat_receive(s, file, client_address, file_size):
     amount_received = 0
     expected_package_id = 1
     s.settimeout(TIMEOUT)
     receive_window = PriorityQueue(MAX_WINDOW_SIZE)
     timeout_count = 0
     print('in selective_repeat_receive')
-    while amount_received < fileSize:
-        while not receive_window.full() and amount_received < fileSize:
+    while amount_received < file_size:
+        while not receive_window.full() and amount_received < file_size:
             try:
                 package, address = s.recvfrom(CHUNK_SIZE)
                 timeout_count = 0
@@ -156,12 +154,12 @@ def selective_repeat_receive(s, file, client_address, fileSize):
                 file.write(data)
                 amount_received += len(data)
                 expected_package_id += 1
-                print('amount_received', amount_received, 'fileSize', fileSize)
+                print('amount_received', amount_received, 'fileSize', file_size)
 
         #print("sali del primer while")
         while not receive_window.empty() and receive_window.queue[0][1].has_the_id(expected_package_id):
             package = receive_window.get()[1]
             file.write(package.get_data())
             amount_received += len(package.get_data())
-            print('amount_received', amount_received, 'fileSize', fileSize)
+            print('amount_received', amount_received, 'fileSize', file_size)
             expected_package_id += 1

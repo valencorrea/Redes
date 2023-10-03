@@ -2,13 +2,13 @@ from ..constants import *
 import socket
 
 
-def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
+def stop_and_wait_receive(s, f, address, file_size):
     received = 0
     ack = 0
-    transferSocket.settimeout(HANDSHAKE_TIMEOUT)
-    while received < fileSize:
+    s.settimeout(HANDSHAKE_TIMEOUT)
+    while received < file_size:
         try:
-            package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
+            package, address = s.recvfrom(CHUNK_SIZE)
         except:
             print("TIMEOUT")
             exit(1)
@@ -19,28 +19,28 @@ def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
             f.write(data)
             ack = package_id
         res = package_id.to_bytes(ID_SIZE, byteorder='big')
-        transferSocket.sendto(res, clientAddress)
+        s.sendto(res, address)
 
 
-def stop_and_wait_send(s, f, send_address):
+def stop_and_wait_send(s, f, address):
     s.settimeout(TIMEOUT)
     timeouts = 0
-    packageId = 0
+    package_id = 0
     ack = 0
     data = ''
     while True:
-        print(f'ack: {ack} package_id:  {packageId}')
+        print(f'ack: {ack} package_id:  {package_id}')
         try:
-            if ack == packageId:
-                packageId = 1 if packageId == 65535 else packageId + 1
+            if ack == package_id:
+                package_id = 1 if package_id == 65535 else package_id + 1
                 data = f.read(CHUNK_SIZE - HEADER_SIZE)
                 if not data:
                     break
             else:
-                print(f'packet {packageId} will be repeated')
-            headerb = packageId.to_bytes(ID_SIZE, byteorder='big')
-            chunk = headerb + data
-            s.sendto(chunk, send_address)
+                print(f'packet {package_id} will be repeated')
+            header_b = package_id.to_bytes(ID_SIZE, byteorder='big')
+            chunk = header_b + data
+            s.sendto(chunk, address)
 
             # Esperar la confirmación del servidor para este paquete
             package, _ = s.recvfrom(HEADER_SIZE)

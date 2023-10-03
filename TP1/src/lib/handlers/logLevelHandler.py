@@ -7,7 +7,7 @@ class LogLevel(Enum):
     LOW = 0
 
 
-def retrieveLevel(v=False, q=False):
+def retrieve_level(v=False, q=False):
     if v:
         return LogLevel.HIGH
     if q:
@@ -15,6 +15,6 @@ def retrieveLevel(v=False, q=False):
     return LogLevel.NORMAL
 
 
-def log(message, level, actualLevel):
-    if level <= actualLevel:
+def log(message, level, actual_level):
+    if level <= actual_level:
         print(message)

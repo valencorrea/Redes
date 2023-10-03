@@ -1,5 +1,5 @@
 import argparse
-from lib.handlers.serverHandler import runServer
+from lib.handlers.serverHandler import run_server
 
 serverPort = 12002
 serverName = '127.0.0.1'
@@ -19,7 +19,7 @@ def main():
 
     args = parser.parse_args()
     try:
-        runServer(args)
+        run_server(args)
     except KeyboardInterrupt:
         print(" pressed. Exiting gracefully.")
 

@@ -1,6 +1,6 @@
 import argparse
 from lib.constants import *
-from lib.handlers.clientHandler import runClient
+from lib.handlers.clientHandler import run_client
 
 serverName = '127.0.0.1'
 serverPort = 12002
@@ -22,7 +22,7 @@ def main():
     protocol.add_argument('-sr', '--selectiveRepeat', help="use selective repeat protocol", action="store_true")
 
     args = parser.parse_args()
-    runClient(args, UPLOAD)
+    run_client(args, UPLOAD)
 
 
 main()

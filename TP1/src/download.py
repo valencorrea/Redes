@@ -21,7 +21,7 @@ def main():
     protocol.add_argument('-sr', '--selectiveRepeat', help="use selective repeat protocol", action="store_true")
 
     args = parser.parse_args()  # arg, group = parseArguments()
-    runClient(args, DOWNLOAD)
+    run_client(args, DOWNLOAD)
 
 
 main()
