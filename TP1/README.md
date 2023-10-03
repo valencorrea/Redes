@@ -5,9 +5,9 @@
 |-----------------------------------|--------|----------------------|--------------------------------------------|
 | Pablo Salvador Dimartino          | 101231 | pdimartino@fi.uba.ar | [GitHub](https://github.com/psdimartino) |
 | Valentina Laura Correa            | 104415 | vcorrea@fi.uba.ar    | [GitHub](https://github.com/valencorrea)   |
-| Agustin Ariel Andrade             | XXXXXX | aandrade@fi.uba.ar   | [GitHub](https://github.com/AgussAndrade) | 
+| Agustin Ariel Andrade             | 104046 | aandrade@fi.uba.ar   | [GitHub](https://github.com/AgussAndrade) | 
 | Stephanie Ingrid Izquierdo Osorio | 104196 | sizquierdo@fi.uba.ar | [GitHub](https://github.com/stephanieizquierdo) | 
-| Juan Sebastian Burgos             | XXXXXX | jsburgos@fi.uba.ar   | [GitHub](https://github.com/juansburgos) | 
+| Juan Sebastian Burgos             | 100113 | jsburgos@fi.uba.ar   | [GitHub](https://github.com/juansburgos) | 
 
 ## Introducción
 La presente entrega contiene los requerimientos pedidos para el trabajo practico
@@ -39,50 +39,120 @@ con el objetivo de lograr una transferencia confiable al utilizar el protocolo.
 ## Hipótesis y supuestos
 
  - Existe un tamaño máximo contemplado en el protocolo por el tamaño de los paquetes 
- - No hay restricciones en el tamaño de los archivos que se le pueden mandar al servidor 
- - En caso de que el cliente intente descargar un archivo que no existe en el servidor el cliente time out [TO DO]
- - El time out es de 5 segundos (o milisegundos?)
- - 
+ - El tamaño máximo que se puede procesar de los archivos es de 4GB.
+ - No se enviaran archivos lo suficientemente grandes como para que se acaben los números de
+secuencia y acknowledge resultando en que se reinicie su rango.
+ - En caso de que el cliente intente descargar un archivo que no existe en el servidor, este lanzara un error
+ - El time out es de 0.1 segundos 
+ - Como maximo se permitiran 10 conexiones. Esto es para evitar ataques y congestion del servidor
+ - El cliente tiene espacio en su disco para guardar los archivos que descarga.
+
+
 ## Implementación
 
 Procederemos a explicar nuestra estructura
 
+### Servidor
+
+El servidor al levantarse escuchara conexiones y levantara un thread por cada una.
+El servidor puede manejar como maximo 10 conexiones en simultaneo.
+
+Para cada conexion, se le informa al cliente su address y se identificara 
+la accion deseada del cliente, que protocolo desea usar, las rutas de los archivos 
+y el nivel de verbossity. Con esta informacion se procedera a lanzar las funciones pertinentes a la accion y el protocolo elegido.
+
+
 ### Cliente
 
 El cliente puede tener dos funcionalidades que se divide en dos aplicaciones de línea de comandos: upload y download.
-
+#### Upload
 El comando upload envía un archivo al servidor para ser guardado con el nombre asignado.
 
-`python3 file-upload [-h] [-v | -q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME] [-saw STOPANDWAIT] [-sr SELECTIVE REPEAT]`
+![upload](src/informeFiles/upload.jpeg)
 
-Donde cada flag indica:
 
-- -h/--help: Imprime el mensaje de "help"
-- -v/--verbose: Incrementa en uno la verbosidad en cuanto al sistema de logueo del servidor
-- -q/--quiet: Decrementa en uno la verbosidad en cuanto al sistema de logueo. 
-- -H/--host: Indica la dirección IP del servicio 
-- p/--port: Indica el puerto 
-- -s/--src: Indica el path del archivo a subir. 
-- -n/--name: Nombre del archivo a subir. 
-- -saw/--stopAndWait: Para indicar el protocolo a utilizar sea Stop and Wait.
-- -sr/--selectiveRepeat: Para indicar que el protocolo a utilizar sea Selective repeat
+#### Download
+![download](src/informeFiles/download.jpeg)
 
-En nuestra implementación esta operación sigue los siguientes pasos:
+El comando download descarga un archivo del servidor para ser guardado en el storage del cleinte con el nombre asignado.
 
-Crea un Socket con el protocolo correspondiente según el parámetro ingresado 
+
+En nuestra implementación estas operaciones sigue los siguientes pasos:
+ Crea un Socket con el protocolo correspondiente según el parámetro ingresado 
 en protocol en el host "localhost" y el puerto pasado por parámetro.
+Luego comenzamos con el handshake en el cual le enviamos una estructura que posee 
+una data que es el ID y ademas manda metadata (el tipo de comando, el tamaño del archivo y el nombre de este)
+Luego de esto, verificamos que el servidor haya contestado con un status code.
+Si todo fue exitoso, se lanzara un hilo segun la acción y el protocolo elegido, selectiveRepeat o Stop and Wait.
 
-Envía una estructura Metadata (el tipo de comando, el nombre del archivo, y 
-el tamaño de este), descripta en la sección de protocolo.
-Comienza el envío del archivo en sí, para ello, se dividen los mensajes 
-largos en segmentos más cortos de tamaño CHUNCK_SIZE(256).
-Es decir que se envían mensajes de este tamaño hasta completar el archivo 
-o hasta que quede un segmento menor al tamaño del archivo, de ser así se 
-manda un último mensaje con este tamaño inferior.
-Por último, se espera una respuesta del servidor para corroborar si la transferencia de archivos se resolvió de forma correcta.
 
+### PROTOCOLOS
+
+#### Stop and Wait
+
+El protocolo Stop and Wait consiste en ir enviando y esperando al ACK de cada segmento
+antes de poder pasar al siguiente. En este protocolo tenemos los siguientes casos a considerar.
+1. Si se envía y recibe su ACK correspondiente al package ID,  se continuara con la lectura del archivo.
+2. Desde el lado del que envía, en caso de que se pierda algún paquete que envía data del
+archivo, eventualmente saltara un timeout. Esto hará que se vuelva a enviar y repita el 
+ciclo hasta que se reciba el ACK o repita una cantidad de veces determinada
+por MAX_TIMEOUTS. Si este limite se alcanza se asume que se perdió la conexión con
+la otra parte y se procederá a cerrarla.
+
+3. Desde el lado del que lee, mientras lo que se recibio sea menor al tamaño del archivo, se intentara recibir un paquete
+y si no se recibe un paquete en el tiempo esperado se saltara un time out y se dará por perdida la conexión.
+
+4. Desde el lado del que lee, si se pierde un ACK enviado como respuesta a un segmento se volverá a
+intentar leer.
+
+#### Selective Repeat
+
+Para este protocolo implementamos la siguiente estructura de paquete: 
+
+![paquete](src/informeFiles/paquete.png)
+
+En este protocolo tenemos la implementacion de una ventana en la cual, para el caso de envio, tenemos en cuenta los siguientes casos:
+
+Si no se termino de leer el archivo y la ventana no esta vacia, leo el archivo y creo un paquete con esa data y el ID correspondiente
+se setea el timestamp y se inserta este paquete en la ventana.
+
+Si la ventana esta llena o termino de leer, espera a recibir ACK y va marcando los paquetes que recibio.
+
+Para realizar el deslizamiento de ventana, se fija si los paquetes ya han sido recibidos, y si es asi, los saca de esta.
+
+Para aquellos paquetes que han expirado, es decir que no se obtuvo su ACK, 
+se vuelve a reenviarlos, como MAXIMUM_RETRIES veces.
+Y en caso de no obtener el ACK de un paquete que ya ha sido repetido MAXIMUM_RETRIES veces, se asume que la coneccion se perdio.
+
+Para el caso de recepcion tenemos la ventana implementada como PriorityQueue y tenemos en cuenta los siguientes casos:
+
+Mientras recibi menos de lo que tengo que recibir y la ventana no está llena, se intentara recibir paquetes.
+Se extrae el ID de dicho paquete y se envia para confirmar la recepcion de este. 
+
+Si se recibe el paquete esperado, Se escribe la data en el archivo y se incrementan la cantidad recibida y el id esperado.
+En caso de no recibir el paquete esperado, si se recibe un paquete con ID menor, este se descarta.
+Si se recibe un paquete que ya estaba en la ventana, se descarta este ultimo.
+Y por ultimo, si llega un paquete con ID mayor al que se esperaba, este se inserta en la ventana.
 
 ### Ejecución
+
+#### Stop and wait:
+
+Servidor: `python3 start-server.py -H 10.0.0.1 -p 12001 -s lib/files/server-files -saw`
+
+Upload: `python3 upload.py -H 10.0.0.1 -p 12001 -s lib/files/client-files/archivo.jpeg -n archivo-en-server.jpeg -saw`
+
+Download: `python3 download.py -H 10.0.0.1 -p 12001 -s lib/files/client-files/archivo-descargado.jpeg -n archivo-en-server.jpeg -saw`
+
+#### Selective repeat:
+
+Servidor: `python3 start-server.py -H 10.0.0.1 -p 12001 -s lib/files/server-files -sr`
+
+Upload: `python3 upload.py -H 10.0.0.1 -p 12001 -s lib/files/client-files/tp.py -n tp-en-server.py -sr`
+
+Download: `python3 download.py -H 10.0.0.1 -p 12001 -s lib/files/client-files/tp_descargado.pdf -n tp-en-server.pdf -sr`
+
+
 
 ### Preguntas y respuestas
 
@@ -100,13 +170,18 @@ con él enviando un paquete a su dirección IP.
 
 Un protocolo de la capa de aplicación posee la funcionalidad de definir la comunicacion entre los procesos de una aplicación que son ejecutados en distintos end-points.
 Dentro de sus funcionalidades podemos nombrar:
-● La sintaxis de los distintos tipos de mensajes, es decir, que campos poseen y cómo se delimitan     ● Los tipos de mensajes intercambiados
-● La semántica de los campos, 
-● Las reglas para determinar cuándo y cómo un proceso envía mensajes y
+
+- La sintaxis de los distintos tipos de mensajes, es decir, que campos poseen y cómo se delimitan 
+- Los tipos de mensajes intercambiados 
+- La semántica de los campos, 
+- Las reglas para determinar cuándo y cómo un proceso envía mensajes y
 responde a los mismos.
-3. Detalle el protocolo de aplicación desarrollado en este trabajo.
-el 3 lo dejo apra completar al final y asi tmb metemos grafiquitos
+3. Detalle el protocolo de aplicación desarrollado en este trabajo
+
+Se encuentra previamente explicado en la seccion PROTOCOLOS
+
 4. La capa de transporte del stack TCP/IP ofrece dos protocolos: TCP y UDP. ¿Qué servicios proveen dichos protocolos? ¿Cuáles son sus características? ¿Cuando es apropiado utilizar cada uno? 
+
 UDP proporciona los servicios mínimos de un protocolo de la capa de transporte, es
 decir multiplexado y demultiplexado, y verificación de integridad; Por eso mismo se lo denomina Best-effort. Además UDP tiene como características que tiene un header minimo, no necesita conexión
 y pueden ocurrir pérdida de paquetes y haber paquetes duplicados. TCP en cambio
@@ -118,6 +193,7 @@ internet o juegos online, donde es probable que un paquete perdido no afecte a
 nadie. Por otra parte, TCP se suele usar en el resto de los casos donde la
 confiabilidad de entrega es imprescindible. Algunas aplicaciones que utilizan
 protocolos de aplicación con TCP son por ejemplo e-mail, web y transferencia de archivos. 
+
 
 
 ### Otros links
