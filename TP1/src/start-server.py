@@ -1,9 +1,6 @@
 import argparse
 from lib.handlers.serverHandler import run_server
 
-serverPort = 12002
-serverName = '127.0.0.1'
-
 
 def main():
     parser = argparse.ArgumentParser(description="start server.")

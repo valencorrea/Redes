@@ -2,11 +2,6 @@ import argparse
 from lib.handlers.clientHandler import *
 from lib.constants import *
 
-# serverName = '127.0.0.1'
-serverPort = 12002
-fileName = 'test.txt'
-
-
 def main():
     parser = argparse.ArgumentParser(description="download a file from server.")
     group = parser.add_mutually_exclusive_group()

@@ -16,7 +16,7 @@ def run_client(args, method):
         log('client sarted', LogLevel.HIGH, log_level)
         if method == UPLOAD:
             if not os.path.exists(args.src):
-                log('giving file is not on disk',LogLevel.LOW,log_level)
+                log('File does not exist', LogLevel.LOW, log_level)
                 return
             try:
                 send_address = upload_handshake(s, host, port, args.name, args.src, log_level)

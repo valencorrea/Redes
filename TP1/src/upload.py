@@ -2,11 +2,6 @@ import argparse
 from lib.constants import *
 from lib.handlers.clientHandler import run_client
 
-serverName = '127.0.0.1'
-serverPort = 12002
-fileName = 'a.txt'
-fileNameIMG = 'huevos_revueltos.jpeg'
-
 
 def main():
     parser = argparse.ArgumentParser(description="upload a file to server.")
