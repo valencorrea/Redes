@@ -1,16 +1,19 @@
 from ..constants import *
 import socket
 
+from ..handlers.logLevelHandler import *
 
-def stop_and_wait_receive(s, f, address, file_size):
+
+def stop_and_wait_receive(s, f, address, file_size, log_level):
     received = 0
     ack = 0
     s.settimeout(HANDSHAKE_TIMEOUT)
+    log('Starting receive with stop and wait', LogLevel.HIGH, log_level)
     while received < file_size:
         try:
             package, address = s.recvfrom(CHUNK_SIZE)
         except:
-            print("TIMEOUT")
+            log('TIMEOUT receive with stop and wait', LogLevel.NORMAL, log_level)
             exit(1)
         package_id = int.from_bytes(package[:ID_SIZE], byteorder='big')
         data = package[HEADER_SIZE:]
@@ -22,22 +25,23 @@ def stop_and_wait_receive(s, f, address, file_size):
         s.sendto(res, address)
 
 
-def stop_and_wait_send(s, f, address):
+def stop_and_wait_send(s, f, address, log_level):
     s.settimeout(TIMEOUT)
     timeouts = 0
     package_id = 0
     ack = 0
     data = ''
+    log('Starting send with stop and wait', LogLevel.HIGH, log_level)
     while True:
-        print(f'ack: {ack} package_id:  {package_id}')
+        log(f'ack: {ack} package_id:  {package_id}', LogLevel.HIGH, log_level)
         try:
             if ack == package_id:
-                package_id = 1 if package_id == 65535 else package_id + 1
+                package_id = package_id + 1
                 data = f.read(CHUNK_SIZE - HEADER_SIZE)
                 if not data:
                     break
             else:
-                print(f'packet {package_id} will be repeated')
+                log(f'packet {package_id} will be repeated', LogLevel.NORMAL, log_level)
             header_b = package_id.to_bytes(ID_SIZE, byteorder='big')
             chunk = header_b + data
             s.sendto(chunk, address)
@@ -45,11 +49,11 @@ def stop_and_wait_send(s, f, address):
             # Esperar la confirmación del servidor para este paquete
             package, _ = s.recvfrom(HEADER_SIZE)
             ack = int.from_bytes(package[: ID_SIZE], byteorder='big')
-            print(f'Confirmation received for pacakge {ack}')
+            log(f'Confirmation received for pacakge {ack}', LogLevel.NORMAL, log_level)
             timeouts = 0
         except socket.timeout:
-            print("hubo timeout")
+            log('TIMEOUT at send with stop and wait', LogLevel.HIGH, log_level)
             timeouts += 1
             if timeouts == MAX_TIMEOUTS:
-                print("Too many timeouts, connection abort")
+                log("Too many timeouts, connection abort", LogLevel.HIGH, log_level)
                 break

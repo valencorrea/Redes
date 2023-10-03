@@ -2,24 +2,29 @@ import socket
 import threading
 import os
 
+from .logLevelHandler import *
 from ..constants import *
-from ..protocols.selectAndRepeat import selective_repeat_receive, selective_repeat_send
+from ..protocols.selectiveRepeat import selective_repeat_receive, selective_repeat_send
 from ..protocols.stopAndWait import stop_and_wait_receive, stop_and_wait_send
 
 
 def run_server(args):
-    print(args)
     server_port, server_name = args.port, args.host
+    log_level = retrieve_level(args.verbose, args.quiet)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.bind(('', server_port))
-        print("Starting server at", server_name, ':', server_port)
+        log(f'Starting server at {server_name}:  {server_port}', LogLevel.LOW, log_level)
         threads = []
         try:
             while True:
+                log('waiting for new connection', LogLevel.HIGH, log_level)
                 package, client_address = s.recvfrom(CHUNK_SIZE)
+                if len(threads) > MAX_CONNECTIONS:
+                    reject_connection(s, client_address)
+                log(f'new connection at {client_address}', LogLevel.HIGH, log_level)
                 new_thread = threading.Thread(
                     target=handle_connection,
-                    args=(package, client_address, args.selectiveRepeat, args.storage)
+                    args=(package, client_address, args.selectiveRepeat, args.storage, log_level)
                 )
                 new_thread.start()
                 threads.append(new_thread)
@@ -29,15 +34,15 @@ def run_server(args):
 
         except KeyboardInterrupt:
             try:
-                print("closing...")
+                log("closing...", LogLevel.NORMAL, log_level)
                 for thread in threads:
                     thread.join()
-                print("server closed successfully")
+                log("server closed successfully", LogLevel.NORMAL, log_level)
             except KeyboardInterrupt:
                 exit(1)
 
 
-def handle_connection(package, client_address, algorithm, storage_path):
+def handle_connection(package, client_address, algorithm, storage_path, log_level):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         client_method = int.from_bytes(package[ID_SIZE:ID_SIZE + CLIENT_METHOD_SIZE], byteorder='big')
         if client_method == UPLOAD:
@@ -66,9 +71,15 @@ def handle_connection(package, client_address, algorithm, storage_path):
                     if algorithm == STOP_AND_WAIT:
                         stop_and_wait_send(s, f, client_address)
                     else:
-                        selective_repeat_send(s, f, client_address)
+                        selective_repeat_send(s, f, client_address, log_level)
             except OSError as err:
-                print('error while downloading file: ', err)
+                log(f'error while downloading file: {err}', LogLevel.LOW, log_level)
                 s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                          ERR_FILE_NOT_FOUND.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
-    print('finished')
+    log('finished', LogLevel.LOW, log_level)
+
+
+def reject_connection(s, address):
+    too_many_connections_res = (int(0).to_bytes(ID_SIZE, byteorder='big')
+                                + ERR_TOO_MANY_CONNECTIONS.to_bytes(STATUS_CODE_SIZE, byteorder='big'), address)
+    s.sendto(too_many_connections_res, address)
