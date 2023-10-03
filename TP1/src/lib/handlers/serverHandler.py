@@ -58,7 +58,7 @@ def handle_connection(package, client_address, algorithm, storage_path):
             file_name = file_name.rstrip('\0')
             try:
                 with open(storage_path + '/' + file_name, READ_MODE) as f:
-                    file_size = os.path.getsize(file_name)
+                    file_size = os.path.getsize(storage_path + '/' + file_name)
                     s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                              STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big') +
                              file_size.to_bytes(FILE_SIZE, byteorder='big'),

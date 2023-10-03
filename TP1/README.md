@@ -79,7 +79,8 @@ largos en segmentos más cortos de tamaño CHUNCK_SIZE(256).
 Es decir que se envían mensajes de este tamaño hasta completar el archivo 
 o hasta que quede un segmento menor al tamaño del archivo, de ser así se 
 manda un último mensaje con este tamaño inferior.
-Por último, se espera una respuesta del servidor para corroborar si la transferencia de archivos se resolvió de forma correcta
+Por último, se espera una respuesta del servidor para corroborar si la transferencia de archivos se resolvió de forma correcta.
+
 
 ### Ejecución
 

@@ -13,9 +13,8 @@ def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
             received += len(data)
             f.write(data)
             ack = package_id
-        res = package_id.to_bytes(ID_SIZE, byteorder='big') + ack.to_bytes(ACK_SIZE, byteorder='big')
+        res = package_id.to_bytes(ID_SIZE, byteorder='big')
         transferSocket.sendto(res, clientAddress)
-        ack = 0 if package_id == 65535 else package_id
 
 
 def stop_and_wait_send(s, f, send_address):
@@ -33,14 +32,14 @@ def stop_and_wait_send(s, f, send_address):
                 if not data:
                     break
             else:
-                print("\n\nhubo perdida de paquete\n\n")
-            headerb = packageId.to_bytes(ID_SIZE, byteorder='big') + ack.to_bytes(ACK_SIZE, byteorder='big')
+                print(f'packet {packageId} will be repeated')
+            headerb = packageId.to_bytes(ID_SIZE, byteorder='big')
             chunk = headerb + data
             s.sendto(chunk, send_address)
 
             # Esperar la confirmación del servidor para este paquete
             package, _ = s.recvfrom(HEADER_SIZE)
-            ack = int.from_bytes(package[ID_SIZE: ID_SIZE + ACK_SIZE], byteorder='big')
+            ack = int.from_bytes(package[: ID_SIZE], byteorder='big')
             print(f'Confirmation received for pacakge {ack}')
             timeouts = 0
         except socket.timeout:

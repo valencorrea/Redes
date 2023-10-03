@@ -1,22 +1,33 @@
 import socket
 import os
 
+from .logLevelHandler import retrieveLevel
 from ..constants import *
 from ..protocols.selectAndRepeat import selective_repeat_send, selective_repeat_receive
 from ..protocols.stopAndWait import stop_and_wait_send, stop_and_wait_receive
 
 def runClient(args, method):
     host, port = args.host, args.port
+    logLevel = retrieveLevel(args.verbose,)
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.settimeout(HANDSHAKE_TIMEOUT)
         if method == UPLOAD:
-            send_address = upload_handshake(s, host, port, args.name, args.src)
+            try:
+                send_address = upload_handshake(s, host, port, args.name, args.src)
+            except socket.timeout:
+                print('HANDSHAKE FAILED')
+                exit(1)
             with open(args.src, READ_MODE) as f:
                 if args.selectiveRepeat:
                     selective_repeat_send(s, f, send_address)
                 else:
                     stop_and_wait_send(s, f, send_address)
         elif method == DOWNLOAD:
-            receive_address, file_size = download_handshake(s, host, port, args.name)
+            try:
+                receive_address, file_size = download_handshake(s, host, port, args.name)
+            except socket.timeout:
+                print('HANDSHAKE FAILED')
+                exit(1)
             with open(args.dst, WRITE_MODE) as f:
                 if args.selectiveRepeat:
                     selective_repeat_receive(s, f, receive_address, file_size)
