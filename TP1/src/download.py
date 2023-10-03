@@ -2,7 +2,7 @@ import argparse
 from lib.handlers.clientHandler import *
 from lib.constants import *
 
-#serverName = '127.0.0.1'
+# serverName = '127.0.0.1'
 serverPort = 12002
 fileName = 'test.txt'
 
@@ -20,11 +20,8 @@ def main():
     protocol.add_argument('-saw', '--stopAndWait', help="use stop and wait protocol", action="store_true")
     protocol.add_argument('-sr', '--selectiveRepeat', help="use selective repeat protocol", action="store_true")
 
-
     args = parser.parse_args()  # arg, group = parseArguments()
     runClient(args, DOWNLOAD)
 
 
 main()
-
-

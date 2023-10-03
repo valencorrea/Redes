@@ -64,32 +64,32 @@ def download_handshake(s, host, port, name):
     return download_address, file_size
 
 
-def uploadClientHandshake(packageIdBytes, name, path, method_b):
-    file_size = os.path.getsize(path)
-    header = (packageIdBytes
-              + method_b
-              + file_size.to_bytes(FILE_SIZE, byteorder='big')
-              + name.ljust(CHUNK_SIZE - ID_SIZE - FILE_SIZE, '\0').encode('utf-8'))
-
-    # return header
-
-
-def downloadClientHandshake(packageIdBytes, name, clientMethodBytes):
-    header = (packageIdBytes
-              + clientMethodBytes
-              + name.ljust(CHUNK_SIZE - ID_SIZE, '\0').encode('utf-8'))
-    return header
-
-
-def handleHandshake(package):
-    ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
-    handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
-    newPort = int.from_bytes(package[ACK_SIZE + STATUS_CODE_SIZE: ACK_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
-    print(handshakeStatusCode)
-    if handshakeStatusCode != STATUS_OK:
-        print("El servidor respondió con error", handshakeStatusCode)
-        exit(1)
-
-    return ack, handshakeStatusCode, newPort
+# def uploadClientHandshake(packageIdBytes, name, path, method_b):
+#     file_size = os.path.getsize(path)
+#     header = (packageIdBytes
+#               + method_b
+#               + file_size.to_bytes(FILE_SIZE, byteorder='big')
+#               + name.ljust(CHUNK_SIZE - ID_SIZE - FILE_SIZE, '\0').encode('utf-8'))
+#
+#     # return header
+#
+#
+# def downloadClientHandshake(packageIdBytes, name, clientMethodBytes):
+#     header = (packageIdBytes
+#               + clientMethodBytes
+#               + name.ljust(CHUNK_SIZE - ID_SIZE, '\0').encode('utf-8'))
+#     return header
+#
+#
+# def handleHandshake(package):
+#     ack = int.from_bytes(package[:ACK_SIZE], byteorder='big')
+#     handshakeStatusCode = int.from_bytes(package[ACK_SIZE:ACK_SIZE + STATUS_CODE_SIZE], byteorder='big')
+#     newPort = int.from_bytes(package[ACK_SIZE + STATUS_CODE_SIZE: ACK_SIZE + STATUS_CODE_SIZE + 2], byteorder='big')
+#     print(handshakeStatusCode)
+#     if handshakeStatusCode != STATUS_OK:
+#         print("El servidor respondió con error", handshakeStatusCode)
+#         exit(1)
+#
+#     return ack, handshakeStatusCode, newPort
 
 

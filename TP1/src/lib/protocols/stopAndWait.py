@@ -5,8 +5,13 @@ import socket
 def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
     received = 0
     ack = 0
-    while received < fileSize:  #contemplar perdida de paquetes
-        package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
+    transferSocket.settimeout(HANDSHAKE_TIMEOUT)
+    while received < fileSize:
+        try:
+            package, clientAddress = transferSocket.recvfrom(CHUNK_SIZE)
+        except:
+            print("TIMEOUT")
+            exit(1)
         package_id = int.from_bytes(package[:ID_SIZE], byteorder='big')
         data = package[HEADER_SIZE:]
         if (ack + 1) == package_id:  # Recibi paquete siguiente
@@ -18,7 +23,7 @@ def stop_and_wait_receive(transferSocket, f, clientAddress, fileSize):
 
 
 def stop_and_wait_send(s, f, send_address):
-    s.settimeout(5)
+    s.settimeout(TIMEOUT)
     timeouts = 0
     packageId = 0
     ack = 0
