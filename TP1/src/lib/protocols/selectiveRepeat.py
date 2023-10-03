@@ -4,6 +4,7 @@ import time
 from queue import PriorityQueue
 
 from ..constants import *
+from ..handlers.logLevelHandler import *
 
 
 class Package:
@@ -54,24 +55,24 @@ class Package:
         self.__retry_count += 1
 
 
-def wait_for_ack(s):
+def wait_for_ack(s, log_level):
     try:
         package, server_address = s.recvfrom(ID_SIZE)
         return int.from_bytes(package, byteorder='big')
     except socket.timeout:
-        print('socket timeout for ACK')
+        log('socket timeout waiting for ACK', LogLevel.NORMAL, log_level)
         return None
 
 
-def selective_repeat_send(s, f, send_address):
+def selective_repeat_send(s, f, send_address, log_level):
     sent_window = []
     all_file_read = False
     newest_package_id = 0
     s.settimeout(TIMEOUT)
-    print('in selective_repeat_send')
+    log('Starting send with selective repeat', LogLevel.HIGH, log_level)
     while not all_file_read or len(sent_window) > 0:
         # fill the window
-        print('len(sent_window)', len(sent_window))
+        log(f'len(sent_window) {len(sent_window)}', LogLevel.HIGH, log_level)
 
         while len(sent_window) < MAX_WINDOW_SIZE and not all_file_read:
             data = f.read(CHUNK_SIZE - ID_SIZE)
@@ -81,48 +82,48 @@ def selective_repeat_send(s, f, send_address):
             newest_package_id += 1
             package = Package(newest_package_id, data)
             s.sendto(package.serialize_id_and_data(), send_address)
-            print('sent package', newest_package_id)
+            log(f'sent package: {newest_package_id}', LogLevel.HIGH, log_level)
             package.set_timestamp()
             sent_window.append(package)
-        print('waiting for some ack')
-        ack = wait_for_ack(s)
-        print('received ack: ', ack)
+        log('waiting for some ack', LogLevel.NORMAL, log_level)
+        ack = wait_for_ack(s, log_level)
+        log(f'received ack: {ack}', LogLevel.HIGH, log_level)
 
         # mark the acknowledged packages as received
         if ack:
             for package in sent_window:
-                print('package:', package.get_id(), 'ack', package.has_been_received())
+                log(f'package: {package.get_id()} ack: {package.has_been_received()}', LogLevel.HIGH, log_level)
                 if package.has_the_id(ack):
                     package.mark_as_received()
-                    print('Found package with ack: ', ack)
+                    log(f'Found package with ack: {ack}', LogLevel.HIGH, log_level)
                     break
 
         # remove packages until first unacknowledged (slide window)
         while len(sent_window) > 0 and sent_window[0].has_been_received():
-            print('Poped acked package: ', sent_window[0].get_id())
-            sent_window.pop(0)
+            log(f'Poped acked package: {sent_window[0].get_id()}', LogLevel.HIGH, log_level)
 
-        # sent_window = [item for item in sent_window if not item.has_the_id(ack)]
+            sent_window.pop(0)
 
         # resend all expired
         for package in sent_window:
-            if package.retry_times_over(MAXIMUM_RETRIES): #Quit if no response for MAXIMUM_RETRIES times
-                print("TIMEOUT")
+            if package.retry_times_over(MAXIMUM_RETRIES):
+                log('Quit because no response for MAXIMUM_RETRIES times', LogLevel.HIGH, log_level)
+                log(f'TIMEOUT at package: {package}', LogLevel.NORMAL, log_level)
                 exit(1)
             if package.has_expired():
                 s.sendto(package.serialize_id_and_data(), send_address)
                 package.set_timestamp()
                 package.update_retry()
-                print('Resent: ', package.get_id())
+                log(f'Resent: {package.get_id()}', LogLevel.HIGH, log_level)
 
 
-def selective_repeat_receive(s, file, client_address, file_size):
+def selective_repeat_receive(s, file, client_address, file_size, log_level):
     amount_received = 0
     expected_package_id = 1
     s.settimeout(TIMEOUT)
     receive_window = PriorityQueue(MAX_WINDOW_SIZE)
     timeout_count = 0
-    print('in selective_repeat_receive')
+    log('Starting receive with selective repeat', LogLevel.HIGH, log_level)
     while amount_received < file_size:
         while not receive_window.full() and amount_received < file_size:
             try:
@@ -131,16 +132,17 @@ def selective_repeat_receive(s, file, client_address, file_size):
             except socket.timeout:
                 timeout_count += 1
                 if timeout_count > MAX_RECV_TIMEOUTS:
-                    print("TIMEOUT")
+                    log('TIMEOUT at socket receive', LogLevel.NORMAL, log_level)
                     exit(1)
                 break
             package_id = int.from_bytes(package[:ID_SIZE], byteorder='big')
-            print('received: ', package_id)
+
+            log(f'received: {str(package_id)}', LogLevel.HIGH, log_level)
             data = package[ID_SIZE:]
             s.sendto(package[:ID_SIZE], client_address)
             if package_id != expected_package_id:
                 if package_id < expected_package_id:
-                    print("discarded package" + str(package_id))
+                    log(f'discarded package: {str(package_id)}', LogLevel.HIGH, log_level)
                     continue
                 #  check if its already in buffer
                 for item in receive_window.queue:
@@ -149,17 +151,16 @@ def selective_repeat_receive(s, file, client_address, file_size):
                 #  add to buffer
                 ooo_package = Package(package_id, data)
                 receive_window.put((package_id, ooo_package))
-                print("added package" + str(package_id) + "to queue")
+                log(f'added package: {str(package_id)} to queue', LogLevel.HIGH, log_level)
             else:
                 file.write(data)
                 amount_received += len(data)
                 expected_package_id += 1
-                print('amount_received', amount_received, 'fileSize', file_size)
+                log(f'amount_received: {amount_received} fileSize {file_size}', LogLevel.NORMAL, log_level)
 
-        #print("sali del primer while")
         while not receive_window.empty() and receive_window.queue[0][1].has_the_id(expected_package_id):
             package = receive_window.get()[1]
             file.write(package.get_data())
             amount_received += len(package.get_data())
-            print('amount_received', amount_received, 'fileSize', file_size)
+            log(f'amount_received: {amount_received} fileSize {file_size}', LogLevel.NORMAL, log_level)
             expected_package_id += 1
