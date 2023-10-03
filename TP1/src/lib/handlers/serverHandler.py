@@ -38,7 +38,7 @@ def runServer(args):
 
 
 def handle_connection(package, client_address, algorithm, storage_path):
-    with (socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s):
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         client_method = int.from_bytes(package[ID_SIZE:ID_SIZE + CLIENT_METHOD_SIZE], byteorder='big')
         if client_method == UPLOAD:
             file_size = int.from_bytes(package[ID_SIZE + CLIENT_METHOD_SIZE:ID_SIZE + CLIENT_METHOD_SIZE + FILE_SIZE],
