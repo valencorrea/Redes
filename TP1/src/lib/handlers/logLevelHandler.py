@@ -16,5 +16,5 @@ def retrieve_level(v=False, q=False):
 
 
 def log(message, level, actual_level):
-    if level <= actual_level:
+    if level.value <= actual_level.value:
         print(message)

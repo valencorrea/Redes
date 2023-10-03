@@ -28,7 +28,7 @@ def run_client(args, method):
                 if args.selectiveRepeat:
                     selective_repeat_send(s, f, send_address, log_level)
                 else:
-                    stop_and_wait_send(s, f, send_address)
+                    stop_and_wait_send(s, f, send_address, log_level)
         elif method == DOWNLOAD:
             try:
                 receive_address, file_size = download_handshake(s, host, port, args.name, log_level)

@@ -54,9 +54,9 @@ def handle_connection(package, client_address, algorithm, storage_path, log_leve
                 s.sendto(int(0).to_bytes(ID_SIZE, byteorder='big') +
                          STATUS_OK.to_bytes(STATUS_CODE_SIZE, byteorder='big'), client_address)
                 if algorithm == STOP_AND_WAIT:
-                    stop_and_wait_receive(s, f, client_address, file_size)
+                    stop_and_wait_receive(s, f, client_address, file_size, log_level)
                 else:
-                    selective_repeat_receive(s, f, client_address, file_size)
+                    selective_repeat_receive(s, f, client_address, file_size, log_level)
 
         elif client_method == DOWNLOAD:
             file_name = package[ID_SIZE + CLIENT_METHOD_SIZE:].decode('utf-8')
@@ -69,7 +69,7 @@ def handle_connection(package, client_address, algorithm, storage_path, log_leve
                              file_size.to_bytes(FILE_SIZE, byteorder='big'),
                              client_address)
                     if algorithm == STOP_AND_WAIT:
-                        stop_and_wait_send(s, f, client_address)
+                        stop_and_wait_send(s, f, client_address, log_level)
                     else:
                         selective_repeat_send(s, f, client_address, log_level)
             except OSError as err:
