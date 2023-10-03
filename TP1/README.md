@@ -79,9 +79,45 @@ largos en segmentos más cortos de tamaño CHUNCK_SIZE(256).
 Es decir que se envían mensajes de este tamaño hasta completar el archivo 
 o hasta que quede un segmento menor al tamaño del archivo, de ser así se 
 manda un último mensaje con este tamaño inferior.
-Por último, se espera una respuesta del servidor para corroborar si la transferencia de archivos se resolvió de forma correcta
+Por último, se espera una respuesta del servidor para corroborar si la transferencia de archivos se resolvió de forma correcta.
+
 
 ### Ejecución
+
+### Preguntas y respuestas
+
+1. Describa la arquitectura Cliente-Servidor.
+
+La arquitectura cliente-servidor, el servidor es un host que se mantiene siempre activo
+y este da servicio a las solicitudes de muchos otros hosts, que son los clientes. Ademas
+el servidor tiene una dirección fija y conocida, denominada dirección IP. Puesto que el 
+servidor tiene una dirección fija y conocida,
+y siempre está activo. Gracias a estas caracteristicas, un cliente siempre puede contactar 
+con él enviando un paquete a su dirección IP.
+
+
+2. ¿Cuál es la función de un protocolo de capa de aplicación?
+
+Un protocolo de la capa de aplicación posee la funcionalidad de definir la comunicacion entre los procesos de una aplicación que son ejecutados en distintos end-points.
+Dentro de sus funcionalidades podemos nombrar:
+● La sintaxis de los distintos tipos de mensajes, es decir, que campos poseen y cómo se delimitan     ● Los tipos de mensajes intercambiados
+● La semántica de los campos, 
+● Las reglas para determinar cuándo y cómo un proceso envía mensajes y
+responde a los mismos.
+3. Detalle el protocolo de aplicación desarrollado en este trabajo.
+el 3 lo dejo apra completar al final y asi tmb metemos grafiquitos
+4. La capa de transporte del stack TCP/IP ofrece dos protocolos: TCP y UDP. ¿Qué servicios proveen dichos protocolos? ¿Cuáles son sus características? ¿Cuando es apropiado utilizar cada uno? 
+UDP proporciona los servicios mínimos de un protocolo de la capa de transporte, es
+decir multiplexado y demultiplexado, y verificación de integridad; Por eso mismo se lo denomina Best-effort. Además UDP tiene como características que tiene un header minimo, no necesita conexión
+y pueden ocurrir pérdida de paquetes y haber paquetes duplicados. TCP en cambio
+ofrece los servicios de entrega confiable, control de flujo y control de
+congestión, con lo cual no se perderán paquetes ni llegarán duplicados.
+Se usa UDP cuando la velocidad en la entrega de los datos importa más que la
+confiabilidad de los mismos. Por ejemplo para streaming multimedia, telefonía por
+internet o juegos online, donde es probable que un paquete perdido no afecte a
+nadie. Por otra parte, TCP se suele usar en el resto de los casos donde la
+confiabilidad de entrega es imprescindible. Algunas aplicaciones que utilizan
+protocolos de aplicación con TCP son por ejemplo e-mail, web y transferencia de archivos. 
 
 
 ### Otros links
