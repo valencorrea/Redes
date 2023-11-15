@@ -1,0 +1,29 @@
+{
+    "firewall_switch_id" : 1,
+    "rules": [
+      {
+        "description": "Block TCP port 80",
+            "rule": {
+                "network": {
+                  "ip_type": "ipv4"
+                },
+                "transport": {
+                  "protocol": "tcp",
+                  "dst_port": 80
+                }
+            }
+      },
+      {
+        "description": "Block UDP port 80",
+        "rule": {
+            "network": {
+              "ip_type": "ipv4"
+            },
+            "transport": {
+              "protocol": "udp",
+              "dst_port": 80
+            }
+        }
+      }
+    ]
+}
