@@ -8,7 +8,7 @@ class MyTopo(Topo):
         Topo.__init__(self)
 
         if switches < 1:
-            raise Exception("La cantidad de switches tiene que ser mayor a 0")
+            raise Exception("You need to set at least one switch.")
 
         switches_list = []
         for switch in range(0, switches):

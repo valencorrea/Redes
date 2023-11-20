@@ -4,8 +4,12 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
       <excludeFolder url="file://$MODULE_DIR$/venv-2" />
+      <excludeFolder url="file://$MODULE_DIR$/venv-2.7" />
+      <excludeFolder url="file://$MODULE_DIR$/venv2" />
+      <excludeFolder url="file://$MODULE_DIR$/venv22" />
+      <excludeFolder url="file://$MODULE_DIR$/venvvvv" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.8 (TP2)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.8 (2)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
