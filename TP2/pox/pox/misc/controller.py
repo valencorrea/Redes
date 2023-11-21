@@ -23,9 +23,9 @@ class Controller(EventMixin):
 
     def _handle_ConnectionUp(self, event):
         log.debug("Connection Up Event on router %s t", dpidToStr(event.dpid))
-        if dpidToStr(event.dpid) == self.firewall_switch_id:
+        if event.dpid == self.firewall_switch_id:
             for rule in self.rules:
-                self.add_rule(event, rule["rule"])
+                self.add_rule(event, rule)
 
             log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
