@@ -16,7 +16,7 @@
 # This file is derived from the packet library in NOX, which was
 # developed by Nicira, Inc.
 
-#======================================================================
+# ======================================================================
 #
 #                            ICMP Header Format
 #
@@ -29,49 +29,49 @@
 #  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
 #
-#======================================================================
+# ======================================================================
 import struct
 import random
 from .packet_utils import *
 
 from .packet_base import packet_base
 
-TYPE_ECHO_REPLY   = 0
+TYPE_ECHO_REPLY = 0
 TYPE_DEST_UNREACH = 3
-TYPE_SRC_QUENCH   = 4
-TYPE_REDIRECT     = 5
+TYPE_SRC_QUENCH = 4
+TYPE_REDIRECT = 5
 TYPE_ECHO_REQUEST = 8
-TYPE_TIME_EXCEED  = 11
+TYPE_TIME_EXCEED = 11
 
-CODE_UNREACH_NET     = 0
-CODE_UNREACH_HOST    = 1
-CODE_UNREACH_PROTO   = 2
-CODE_UNREACH_PORT    = 3
-CODE_UNREACH_FRAG    = 4
+CODE_UNREACH_NET = 0
+CODE_UNREACH_HOST = 1
+CODE_UNREACH_PROTO = 2
+CODE_UNREACH_PORT = 3
+CODE_UNREACH_FRAG = 4
 CODE_UNREACH_SRC_RTE = 5
 
 _type_to_name = {
-    0   : "ECHO_REPLY",
-    3   : "DEST_UNREACH",
-    4   : "SRC_QUENCH",
-    5   : "REDIRECT",
-    8   : "ECHO_REQUEST",
-    11  : "TIME_EXCEED",
+    0: "ECHO_REPLY",
+    3: "DEST_UNREACH",
+    4: "SRC_QUENCH",
+    5: "REDIRECT",
+    8: "ECHO_REQUEST",
+    11: "TIME_EXCEED",
 }
 
 
 # This is such a hack; someone really needs to rewrite the
 # stringizing.
 # (Note: There may actually be a better way now using _to_str().)
-def _str_rest (s, p):
-  if p.next is None:
-    return s
-  if isinstance(p.next, bytes):
-    return "[%s bytes]" % (len(p.next),)
-  return s+str(p.next)
+def _str_rest(s, p):
+    if p.next is None:
+        return s
+    if isinstance(p.next, bytes):
+        return "[%s bytes]" % (len(p.next),)
+    return s + str(p.next)
 
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 #
 #  Echo Request/Reply
 #   0                   1                   2                   3
@@ -82,7 +82,7 @@ def _str_rest (s, p):
 #  |                             Data                              |
 #  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 class echo(packet_base):
     "ICMP echo packet struct"
 
@@ -93,7 +93,7 @@ class echo(packet_base):
 
         self.prev = prev
 
-        self.id  = random.randint(0, 65535)
+        self.id = random.randint(0, 65535)
         self.seq = 0
 
         if raw is not None:
@@ -124,7 +124,7 @@ class echo(packet_base):
         return struct.pack('!HH', self.id, self.seq)
 
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 #
 #  Time Exceeded
 #   0                   1                   2                   3
@@ -135,18 +135,18 @@ class echo(packet_base):
 #  |       IP Header + 8 bytes of original datagram's data         |
 #  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-#----------------------------------------------------------------------
-class time_exceeded (packet_base):
+# ----------------------------------------------------------------------
+class time_exceeded(packet_base):
     """
     ICMP time exceeded packet struct
     """
 
-    #NOTE: unreachable and time_exceeded are really similar.  If you
+    # NOTE: unreachable and time_exceeded are really similar.  If you
     #      update one, please look at the other as well!
 
     MIN_LEN = 4
 
-    def __init__ (self, raw=None, prev=None, **kw):
+    def __init__(self, raw=None, prev=None, **kw):
         packet_base.__init__(self)
 
         self.prev = prev
@@ -158,12 +158,12 @@ class time_exceeded (packet_base):
 
         self._init(kw)
 
-    def __str__ (self):
+    def __str__(self):
         s = '[time_exceeded]'
 
         return _str_rest(s, self)
 
-    def parse (self, raw):
+    def parse(self, raw):
         assert isinstance(raw, bytes)
         self.raw = raw
         dlen = len(raw)
@@ -179,15 +179,15 @@ class time_exceeded (packet_base):
         if dlen >= 28:
             # xxx We're assuming this is IPv4!
             from . import ipv4
-            self.next = ipv4.ipv4(raw=raw[self.MIN_LEN:],prev=self)
+            self.next = ipv4.ipv4(raw=raw[self.MIN_LEN:], prev=self)
         else:
             self.next = raw[self.MIN_LEN:]
 
-    def hdr (self, payload):
+    def hdr(self, payload):
         return struct.pack('!I', self.unused)
 
 
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 #
 #  Destination Unreachable
 #   0                   1                   2                   3
@@ -198,13 +198,13 @@ class time_exceeded (packet_base):
 #  |       IP Header + 8 bytes of original datagram's data         |
 #  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 class unreach(packet_base):
     """
     ICMP unreachable packet struct
     """
 
-    #NOTE: unreachable and time_exceeded are really similar.  If you
+    # NOTE: unreachable and time_exceeded are really similar.  If you
     #      update one, please look at the other as well!
 
     MIN_LEN = 4
@@ -244,7 +244,7 @@ class unreach(packet_base):
         if dlen >= 28:
             # xxx We're assuming this is IPv4!
             from . import ipv4
-            self.next = ipv4.ipv4(raw=raw[unreach.MIN_LEN:],prev=self)
+            self.next = ipv4(raw=raw[unreach.MIN_LEN:], prev=self)
         else:
             self.next = raw[unreach.MIN_LEN:]
 
@@ -252,24 +252,24 @@ class unreach(packet_base):
         return struct.pack('!HH', self.unused, self.next_mtu)
 
     @property
-    def srcip (self):
+    def srcip(self):
         """
         srcip of referenced packet or None
         """
         try:
-          return self.payload.srcip
+            return self.payload.srcip
         except Exception:
-          return None
+            return None
 
     @property
-    def dstip (self):
+    def dstip(self):
         """
         dstip of referenced packet or None
         """
         try:
-          return self.payload.dstip
+            return self.payload.dstip
         except Exception:
-          return None
+            return None
 
 
 class icmp(packet_base):
@@ -310,11 +310,11 @@ class icmp(packet_base):
         self.parsed = True
 
         if self.type == TYPE_ECHO_REQUEST or self.type == TYPE_ECHO_REPLY:
-            self.next = echo(raw=raw[self.MIN_LEN:],prev=self)
+            self.next = echo(raw=raw[self.MIN_LEN:], prev=self)
         elif self.type == TYPE_DEST_UNREACH:
-            self.next = unreach(raw=raw[self.MIN_LEN:],prev=self)
+            self.next = unreach(raw=raw[self.MIN_LEN:], prev=self)
         elif self.type == TYPE_TIME_EXCEED:
-            self.next = time_exceeded(raw=raw[self.MIN_LEN:],prev=self)
+            self.next = time_exceeded(raw=raw[self.MIN_LEN:], prev=self)
         else:
             self.next = raw[self.MIN_LEN:]
 
