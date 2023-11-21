@@ -1,4 +1,4 @@
-#TP2 SDN
+# TP2 SDN
 ### Ejecución
 Para poder ejecutar el programa es necesario situarse dentro de \textbf{\textbackslash{TP2}} y correr el comando:
 ```python3 pox/pox.py log.level --DEBUG openflow.of_01 forwarding.l2_learning misc.controller```
