@@ -2,25 +2,30 @@
     "firewall_switch_id" : "00-00-00-00-00-02",
     "rules": [
       {
-        "description": "Block UDP port 80",
         "rule": {
-          "protocol": "udp",
+          "ip_ver": "ipv4",
           "dst_port": 80
         }
       },
       {
-        "description": "Block UDP port 5001 and host 1",
         "rule": {
+          "ip_ver": "ipv4",
           "protocol": "udp",
           "dst_port": 5001,
           "dl_src": "00:00:00:00:00:01"
         }
       },
       {
-        "description": "Block communication between host 1 and host 4",
         "rule": {
           "dl_src": "00:00:00:00:00:01",
           "dl_dst": "00:00:00:00:00:04"
+        }
+      },
+      {
+        "rule": {
+          "ip_ver": "ipv4",
+          "src_ip": "10.0.0.1",
+          "dst_ip": "10.0.0.2"
         }
       }
     ]
