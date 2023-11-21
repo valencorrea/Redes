@@ -7,7 +7,7 @@ from pox.lib.util import dpidToStr
 from pox.lib.addresses import EthAddr, IPAddr
 from pox.lib.revent.revent import EventMixin
 import pox.openflow.libopenflow_01 as openflow
-# .TCP_PROTOCOL as TCP_PROTOCOL, ipv4.UDP_PROTOCOL as UDP_PROTOCOL
+
 log = core.getLogger()
 policyFile = "%s/pox/pox/misc/firewall-policies.csv" % os.environ['HOME']
 
@@ -22,11 +22,9 @@ class Controller(EventMixin):
         log.debug("Enabling Firewall Module")
 
     def _handle_ConnectionUp(self, event):
-        log.debug("Connection Up Event on router %s", type(event.dpid))
+        log.debug("Connection Up Event on router %s", event.dpid)
         if event.dpid == self.firewall_switch_id:
-            for rule in self.rules:
-                self.add_rule(event, rule)
-
+            [self.add_rule(event, rule) for rule in self.rules]
             log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
     def add_rule(self, event, rule):

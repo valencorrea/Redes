@@ -15,19 +15,20 @@ class MyTopo(Topo):
             switches_list.append(self.addSwitch(f'switch_{switch}'))
             info(f'Added switch switch_{switch}')
 
-        h1 = self.addHost("host_1")
-        h2 = self.addHost("host_2")
-        h3 = self.addHost("host_3")
-        h4 = self.addHost("host_4")
+        host_1 = self.addHost("host_1")
+        self.addLink(switches_list[0], host_1)
 
-        self.addLink(switches_list[0], h1)
-        self.addLink(switches_list[0], h2)
+        host_2 = self.addHost("host_2")
+        self.addLink(switches_list[0], host_2)
 
-        self.addLink(switches_list[-1], h4)
-        self.addLink(switches_list[-1], h3)
+        host_3 = self.addHost("host_3")
+        self.addLink(switches_list[-1], host_3)
+
+        host_4 = self.addHost("host_4")
+        self.addLink(switches_list[-1], host_4)
 
         for i in range(1, len(switches_list)):
-            info(2, 'addLink. switches len:' + str(len(switches_list)) + 'i:' + str(i) + 'i - 1:' + str(i - 1))
+            info(2, 'Added link switches len:' + str(len(switches_list)) + 'i:' + str(i) + 'i - 1:' + str(i - 1))
             self.addLink(switches_list[i - 1], switches_list[i])
 
 
